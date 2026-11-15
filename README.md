@@ -20,7 +20,10 @@
 - 프로젝트 ID: `dwncrxeayznmmoyjdsit`
 - 데이터베이스 테이블·RPC 함수 배포 완료. 로컬 `.env`에 공개 연결값 설정 완료.
 - Anonymous Sign-Ins 활성화 확인. 사용자가 생성한 이메일 인증 완료 계정을 교사 허용 목록에 등록했습니다.
-- GitHub 저장소 및 GitHub Pages 공개 배포는 아직 생성/실행하지 않았습니다.
+- GitHub 저장소: https://github.com/ClCl616/pixel-classroom
+- 학생 접속 주소: https://clcl616.github.io/pixel-classroom/
+- 교사 접속 주소: https://clcl616.github.io/pixel-classroom/?view=teacher
+- GitHub Pages는 GitHub Actions로 배포하며, `main`에 push하면 검사·빌드 후 자동 재배포합니다. Repository variables에 공개 Supabase 연결값을 등록했습니다.
 - 로컬 데이터베이스 테스트와 브라우저 연습 모드의 제출→마감→공개 흐름을 검증했습니다. 클라우드에서 실제 익명 로그인 및 학생의 교사 기능 접근 차단을 확인했고, DB 트랜잭션으로 교사 수업 생성→학생 제출→마감→공개를 검증한 뒤 테스트 수업·응답은 롤백했습니다. 배포된 화면에서 실제 휴대폰·PC 간 최종 검증은 배포 이후 필요합니다.
 
 ## 로컬 실행
