@@ -102,3 +102,15 @@ npm run build
 - GitHub Pages: https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages
 - Supabase 익명 로그인: https://supabase.com/docs/guides/auth/auth-anonymous
 - Supabase RLS: https://supabase.com/docs/guides/database/postgres/row-level-security
+
+## 사이버폭력 예방 활동 (추가)
+
+- 학생: 기본 화면의 **02 · 사이버폭력 예방** 또는 `cyber/`로 접속합니다.
+- 교사: 교사 입장/수업 목록의 활동 메뉴 또는 `?view=teacher&activity=cyber`에서 QR과 참여 링크를 안내합니다.
+- 기존 트롤리 활동의 로그인, 수업 코드, 제출, 마감, 집계 공개 기능은 유지합니다.
+- 사이버 활동은 가상 단톡방의 사진 조롱·유포를 다루는 3단계 선택 체험입니다. 단계별 반응과 해설, 개인 결과, 실천 문장 입력을 제공합니다.
+- 개인 선택·결과·문장은 서버, localStorage, sessionStorage에 보내거나 저장하지 않습니다. 현재 페이지 메모리에만 존재하며 페이지를 떠나면 초기화합니다. 교사에게도 결과나 완료 인원을 제공하지 않습니다.
+- 공개된 시나리오와 해설 자체는 누구나 읽을 수 있지만 다른 학생의 실제 선택 기록을 조회하는 API는 없습니다.
+- 교사용 사이버 활동 안내는 로그인 없이 볼 수 있습니다. 학생 데이터 조회나 수업 관리 권한을 부여하는 페이지가 아닙니다.
+- 같은 기기의 화면을 다른 사람이 직접 보면 결과를 볼 수 있으므로 공용 기기에서는 체험 후 페이지를 닫습니다.
+- `public/cyber`는 자체 실행 가능한 정적 활동이고, 기본 앱에서 동일 사이트 경로로 연결합니다. 별도 Sites 사이트로 이동하지 않습니다.
