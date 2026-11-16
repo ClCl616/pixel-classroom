@@ -65,6 +65,9 @@ test('room switch clears group chat while private conversation continues',()=>{
  const beforeAction=node('#conversation').innerHTML;
  vm.runInContext('choose(0)',ctx);
  assert.ok(node('#phone-action').innerHTML.includes('캡처하기'));
+ assert.ok(node('#phone-action').innerHTML.includes('다들 웃네. 다른 방에도 보내야겠다.'));
+ assert.ok(node('#phone-action').innerHTML.includes('😂 1'));
+ assert.ok(!node('#phone-action').innerHTML.includes('다른 반 단톡방에도 올라왔대.'));
  assert.equal(node('#conversation').innerHTML,beforeAction);
  node('#operation-next').onclick();assert.ok(node('#phone-action').innerHTML.includes('캡처 미리보기'));
  node('#operation-next').onclick();assert.ok(node('#phone-action').innerHTML.includes('담임 선생님'));
@@ -79,11 +82,28 @@ test('room switch clears group chat while private conversation continues',()=>{
  node('person0').onclick();assert.equal(node('#operation-next').disabled,false);
  node('#operation-next').onclick();assert.ok(node('#phone-action').innerHTML.includes('1명에게 사진 보내기'));
  node('#operation-next').onclick();runNext();
- assert.ok(node('#conversation').innerHTML.includes('상황 알리려고 친구들한테 사진 보냈어.'));
+ assert.ok(node('#conversation').innerHTML.includes('상황 알리려고 서연한테 사진 보냈어.'));
  vm.runInContext('runPhoneAction(2,()=>{})',ctx);
  node('#operation-next').onclick();assert.ok(node('#phone-action').innerHTML.includes('도윤을 차단할까요?'));
  node('#operation-next').onclick();runNext();
  assert.ok(node('#conversation').innerHTML.includes('도윤은 차단했어.'));
+ for(const kind of [1,2])for(const stage of [0,1]){
+  const transcript=node('#conversation').innerHTML;
+  vm.runInContext(`revealed=false;choose(${kind})`,ctx);
+  if(stage===1){if(kind===1)node('person1').onclick();node('#operation-next').onclick();}
+  node('#operation-cancel').onclick();
+  assert.equal(node('#conversation').innerHTML,transcript);
+  assert.equal(vm.runInContext('choices[2]',ctx),undefined);
+  assert.equal(vm.runInContext('revealed',ctx),false);
+  assert.equal(timers.size,0);
+  assert.ok(node('#composer').innerHTML.includes('내 행동 선택'));
+ }
+ vm.runInContext('runPhoneAction(1,()=>{})',ctx);
+ node('person1').onclick();node('person2').onclick();node('#operation-next').onclick();
+ assert.ok(node('#phone-action').innerHTML.includes('하준, 유나 · 2명'));
+ node('#operation-next').onclick();runNext();
+ assert.ok(node('#conversation').innerHTML.includes('하준, 유나한테 사진 보냈어.'));
+
 
  assert.ok(!vm.runInContext(`message('나','“네 잘못이 아니야.”')`,ctx).includes('“'));
  assert.ok(!vm.runInContext(`message('나','“네 잘못이 아니야.”')`,ctx).includes('”'));
@@ -91,4 +111,22 @@ test('room switch clears group chat while private conversation continues',()=>{
  vm.runInContext('play()',ctx);assert.equal(timers.size,1);
  vm.runInContext('home()',ctx);assert.equal(timers.size,0);
  assert.ok(node('#app').innerHTML.includes('대화에 들어가기'));
+});
+
+test('capture keeps the actual group reply, own speech and reaction for each branch',()=>{
+ const source=fs.readFileSync(new URL('../public/cyber/app.js',import.meta.url),'utf8');
+ const nodes=new Map();const node=k=>{if(!nodes.has(k))nodes.set(k,{innerHTML:'',hidden:true,setAttribute(){},focus(){},scrollTo(){},insertAdjacentHTML(_,v){this.innerHTML+=v;},querySelector:node,querySelectorAll:()=>[]});return nodes.get(k);};
+ const ctx=vm.createContext({document:{querySelector:node,body:{classList:{add(){},remove(){},toggle(){}}}},window:{matchMedia:()=>({matches:true,addEventListener(){}}),addEventListener(){},scrollTo(){}},clearTimeout(){}});
+ vm.runInContext(source,ctx);
+ for(let pick=0;pick<3;pick++){
+  vm.runInContext(`current=0;choices=[];revealed=false;play();choose(${pick});`,ctx);
+  node('#incoming-message').onclick();
+  const capture=vm.runInContext('captureConversation()',ctx);
+  const reply=vm.runInContext(`steps[0].options[${pick}][2]`,ctx);
+  assert.ok(capture.includes(reply));
+  assert.equal(capture.includes('😂 1'),pick===0);
+  assert.equal(capture.includes('허락 없이 올린 사진이잖아. 공유하지 말자.'),pick===1);
+  assert.equal(capture.includes('읽음 ✓✓'),pick===2);
+ }
+ vm.runInContext('home()',ctx);assert.equal(vm.runInContext('groupHistory.length',ctx),0);
 });
