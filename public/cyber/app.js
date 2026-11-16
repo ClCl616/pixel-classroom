@@ -20,11 +20,11 @@ let current=0,choices=[],revealed=false;
 let pending=[],finishSequence=null,chatItems=[],resultPage=0,practiceText="";
 const motionQuery=window.matchMedia('(prefers-reduced-motion: reduce)');
 let reduced=motionQuery.matches;
-function stopSequence(){pending.forEach(clearTimeout);pending=[];finishSequence=null;}
+function stopSequence(){pending.forEach(clearTimeout);pending=[];finishSequence=null;const banner=document.querySelector('#incoming-message');if(banner)banner.hidden=true;}
 function focusHeading(){const h=app.querySelector('h1,h2');if(h){h.setAttribute('tabindex','-1');h.focus({preventScroll:true});}}
 function message(name,text){return name==='system'?`<p class="chat-divider">${text}</p>`:name==='photo'?`<div class="msg photo-message"><small>지우</small><img class="chat-photo" src="minseo-silly.png" width="160" height="160" alt="볼을 부풀리고 장난스러운 표정을 짓는 민서의 픽셀 그림"></div>`:`<div class="msg ${name==='나'?'me':''}"><small>${name}</small><div class="bubble">${text}</div></div>`;}
 function home(){stopSequence();document.body.classList.remove('immersed');app.innerHTML=`<section class="intro-scene"><div class="notification" aria-hidden="true"><span class="notification-icon">▣</span><div><small>2학년 3반 · 새 메시지</small><p>“다른 방에도 올릴까?”</p></div><span class="unread-dot"></span></div><h1>잠깐,<br>보내기 전에.</h1><p class="lead">친구의 사진이 단톡방에 올라왔다.<br>이 대화를 보고 있는 나라면?</p><button class="primary" id="start">대화에 들어가기 →</button></section>`;document.querySelector('#start').onclick=()=>{current=0;choices=[];revealed=false;play();};}
-function play(){stopSequence();chatItems=[];document.body.classList.add('immersed');const s=steps[current];app.innerHTML=`<section class="experience"><div class="phone-status" aria-label="휴대폰 상태 표시 디자인"><time>4:12</time><div class="phone-island" aria-hidden="true"></div><div class="phone-indicators" aria-hidden="true"><span class="signal-bars"><i></i><i></i><i></i><i></i></span><svg class="wifi" viewBox="0 0 24 18"><path d="M2 5Q12-3 22 5M6 9Q12 4 18 9M10 13Q12 11 14 13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="16" r="1.4" fill="currentColor"/></svg><span class="battery"><i></i></span></div></div><div class="conversation-head"><span class="chat-avatar">${current===0?'▦':'민'}</span><div><h2>${current===0?'2학년 3반':'민서'}</h2></div></div><div class="immersive-chat" id="conversation" role="log" aria-label="채팅" aria-live="polite" aria-relevant="additions"><p class="time-divider">오후 4:12</p></div><div class="typing-row" id="typing" aria-hidden="true"><span></span><span></span><span></span></div><div class="composer" id="composer"></div><button class="text-btn skip" id="skip">대화 바로 보기 ↓</button></section>`;
+function play(){stopSequence();chatItems=[];document.body.classList.add('immersed');const s=steps[current];app.innerHTML=`<section class="experience"><div id="incoming-message" class="incoming-message" role="status" aria-live="polite" hidden><span class="incoming-avatar">민</span><div><strong>민서</strong><p>내 사진 단톡방에 올라온 거 봤어.</p></div><small>지금</small></div><div class="phone-status" aria-label="휴대폰 상태 표시 디자인"><time>4:12</time><div class="phone-island" aria-hidden="true"></div><div class="phone-indicators" aria-hidden="true"><span class="signal-bars"><i></i><i></i><i></i><i></i></span><svg class="wifi" viewBox="0 0 24 18"><path d="M2 5Q12-3 22 5M6 9Q12 4 18 9M10 13Q12 11 14 13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="16" r="1.4" fill="currentColor"/></svg><span class="battery"><i></i></span></div></div><div class="conversation-head"><span class="chat-avatar">${current===0?'▦':'민'}</span><div><h2>${current===0?'2학년 3반':'민서'}</h2></div></div><div class="immersive-chat" id="conversation" role="log" aria-label="채팅" aria-live="polite" aria-relevant="additions"><p class="time-divider">오후 4:12</p></div><div class="typing-row" id="typing" aria-hidden="true"><span></span><span></span><span></span></div><div class="composer" id="composer"></div><button class="text-btn skip" id="skip">대화 바로 보기 ↓</button></section>`;
  document.body.classList.toggle('still',reduced);focusHeading();
  sequence(s.messages,showChoices);
 }
@@ -45,7 +45,15 @@ function sequence(messages,done){stopSequence();let index=0;const typing=documen
  const complete=()=>{stopSequence();typing.hidden=true;skip.hidden=true;done();followChat();};
  finishSequence=()=>{while(index<messages.length)append();complete();};skip.onclick=()=>finishSequence?.();
  if(reduced){finishSequence();return;}
- const tick=()=>{append();if(index===messages.length){complete();return;}pending.push(setTimeout(tick,1600));};pending.push(setTimeout(tick,650));
+ const next=()=>{if(index===messages.length){complete();return;}pending.push(setTimeout(tick,2300));};
+ const tick=()=>{
+  if(messages[index][0]==='system'&&messages[index][1].startsWith('민서')){
+   const banner=document.querySelector('#incoming-message');banner.hidden=false;typing.hidden=true;
+   pending.push(setTimeout(()=>{banner.hidden=true;typing.hidden=false;append();pending.push(setTimeout(tick,900));},2200));
+   return;
+  }
+  append();next();
+ };pending.push(setTimeout(tick,900));
 }
 function showChoices(){const s=steps[current];document.querySelector('#composer').innerHTML=`<p class="choice-prompt">내 행동 선택</p><div class="options">${s.options.map((o,i)=>`<button class="option" style="--order:${i}" data-choice="${i}"><span class="choice-letter" aria-hidden="true">${['A','B','C'][i]}</span><strong>${o[0]}</strong></button>`).join('')}</div>`;app.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>choose(Number(b.dataset.choice)));}
 function choose(index){if(revealed)return;choices[current]=index;revealed=true;const o=steps[current].options[index];document.querySelector('#composer').innerHTML='';addMessage('나',o[0]);

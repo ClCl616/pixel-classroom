@@ -35,7 +35,17 @@ test('room switch clears group chat while private conversation continues',()=>{
  assert.equal(vm.runInContext('chatItems.length',ctx),3);
  assert.ok(node('#composer').innerHTML.includes('내 행동 선택'));
  const initialChat=node('#conversation').innerHTML;
- vm.runInContext('choose(0)',ctx);node('#skip').onclick();
+ vm.runInContext('choose(0)',ctx);
+ const runNext=()=>{const [id,fn]=timers.entries().next().value;timers.delete(id);fn();};
+ runNext(); // group reply
+ runNext(); // incoming notification, before clearing the old room
+ assert.equal(node('#incoming-message').hidden,false);
+ assert.ok(node('#conversation').innerHTML.includes('오늘 민서 사진 봤어?'));
+ runNext(); // notification finishes, now switch rooms
+ assert.equal(node('#incoming-message').hidden,true);
+ assert.equal(node('.conversation-head h2').textContent,'민서');
+ node('#skip').onclick();
+ assert.equal(timers.size,0);
  assert.equal(vm.runInContext('current',ctx),1);
  assert.ok(!node('#conversation').innerHTML.includes('오늘 민서 사진 봤어?'));
  assert.equal(node('.conversation-head h2').textContent,'민서');
