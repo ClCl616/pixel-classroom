@@ -22,7 +22,7 @@ const motionQuery=window.matchMedia('(prefers-reduced-motion: reduce)');
 let reduced=motionQuery.matches;
 function stopSequence(){pending.forEach(clearTimeout);pending=[];finishSequence=null;const banner=document.querySelector('#incoming-message');if(banner){banner.hidden=true;banner.onclick=null;}}
 function focusHeading(){const h=app.querySelector('h1,h2');if(h){h.setAttribute('tabindex','-1');h.focus({preventScroll:true});}}
-function message(name,text){return name==='system'?`<p class="chat-divider">${text}</p>`:name==='photo'?`<div class="msg photo-message"><small>지우</small><img class="chat-photo" src="minseo-silly.png" width="160" height="160" alt="볼을 부풀리고 장난스러운 표정을 짓는 민서의 픽셀 그림"><div class="photo-reactions" id="photo-reactions" role="status"></div></div>`:`<div class="msg ${name==='나'?'me':''}"><small>${name}</small><div class="bubble">${text}</div></div>`;}
+function message(name,text){text=text.replace(/^[“"]|[”"]$/g,'');return name==='system'?`<p class="chat-divider">${text}</p>`:name==='photo'?`<div class="msg photo-message"><small>지우</small><img class="chat-photo" src="minseo-silly.png" width="160" height="160" alt="볼을 부풀리고 장난스러운 표정을 짓는 민서의 픽셀 그림"><div class="photo-reactions" id="photo-reactions" role="status"></div></div>`:`<div class="msg ${name==='나'?'me':''}"><small>${name}</small><div class="bubble">${text}</div></div>`;}
 function home(){stopSequence();document.body.classList.remove('immersed');app.innerHTML=`<section class="intro-scene"><div class="notification" aria-hidden="true"><span class="notification-icon">▣</span><div><small>2학년 3반 · 새 메시지</small><p>“다른 방에도 올릴까?”</p></div><span class="unread-dot"></span></div><h1>잠깐,<br>보내기 전에.</h1><p class="lead">친구의 사진이 단톡방에 올라왔다.<br>이 대화를 보고 있는 나라면?</p><button class="primary" id="start">대화에 들어가기 →</button></section>`;document.querySelector('#start').onclick=()=>{current=0;choices=[];revealed=false;play();};}
 function play(){stopSequence();chatItems=[];document.body.classList.add('immersed');const s=steps[current];app.innerHTML=`<section class="experience"><button type="button" id="incoming-message" class="incoming-message" aria-label="민서의 새 메시지 열기" hidden><span class="incoming-avatar">민</span><div><strong>민서</strong><p>내 사진 단톡방에 올라온 거 봤어.</p></div><small>지금</small></button><div class="phone-status" aria-label="휴대폰 상태 표시 디자인"><time>4:12</time><div class="phone-island" aria-hidden="true"></div><div class="phone-indicators" aria-hidden="true"><span class="signal-bars"><i></i><i></i><i></i><i></i></span><svg class="wifi" viewBox="0 0 24 18"><path d="M2 5Q12-3 22 5M6 9Q12 4 18 9M10 13Q12 11 14 13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="16" r="1.4" fill="currentColor"/></svg><span class="battery"><i></i></span></div></div><div class="conversation-head"><span class="chat-avatar">${current===0?'▦':'민'}</span><div><h2>${current===0?'2학년 3반':'민서'}</h2></div></div><div class="immersive-chat" id="conversation" tabindex="0" role="log" aria-label="채팅" aria-live="polite" aria-relevant="additions"><p class="time-divider">오후 4:12</p></div><div class="typing-row" id="typing" aria-hidden="true"><span></span><span></span><span></span></div><div class="composer" id="composer"></div><button class="text-btn skip" id="skip">대화 바로 보기 ↓</button></section>`;
  followLatest=true;document.querySelector('#conversation').onscroll=e=>{const log=e.target;followLatest=log.scrollHeight-log.scrollTop-log.clientHeight<45;};
@@ -57,31 +57,56 @@ function sequence(messages,done){stopSequence();let index=0,awaitingTap=false;co
 }
 function choiceText(text){return text.startsWith('“')?text:`(${text})`;}
 function showChoices(){const s=steps[current];document.querySelector('#composer').innerHTML=`<p class="choice-prompt">내 행동 선택</p><div class="options">${s.options.map((o,i)=>`<button class="option" style="--order:${i}" data-choice="${i}"><span class="choice-letter" aria-hidden="true">${['A','B','C'][i]}</span><strong>${choiceText(o[0])}</strong></button>`).join('')}</div>`;app.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>choose(Number(b.dataset.choice)));}
-function performChoice(index,text){
- if(text.startsWith('“')){addMessage('나',text);return;}
+function performChoice(index,text,done=()=>{}){
+ if(text.startsWith('“')){addMessage('나',text);done();return;}
+ if(current===2){runPhoneAction(index,done);return;}
  const log=document.querySelector('#conversation');
  if(current===0&&index===0){
   document.querySelector('#photo-reactions').innerHTML='<span class="reaction-chip" aria-label="내 웃는 반응 1개">😂 <b>1</b></span>';
   const photo=document.querySelector('.photo-message');
   log.scrollTo({top:Math.max(0,photo.offsetTop-log.offsetTop-16),behavior:reduced?'instant':'smooth'});
-  return;
+  done();return;
  }
  if(current===0&&index===2){
   log.insertAdjacentHTML('beforeend','<div class="read-receipt" role="status">읽음 <span aria-hidden="true">✓✓</span></div>');
- }else if(current===2&&index===0){
-  log.insertAdjacentHTML('beforeend','<div class="action-record" role="status"><span class="action-symbol" aria-hidden="true">▣</span><div><strong>대화 기록 보관됨</strong><small>사진 · 메시지 · 시간</small><div class="action-delivery"><span aria-hidden="true">✓</span> 선생님에게 도움 요청 전달됨</div></div></div>');
- }else if(current===2&&index===1){
-  log.insertAdjacentHTML('beforeend','<div class="action-record forward-record" role="status"><img src="minseo-silly.png" width="44" height="44" alt="전달한 사진"><div><strong>사진 전달됨</strong><small>친구 3명에게</small><div class="delivery-checks" aria-hidden="true">✓ ✓ ✓</div></div></div>');
- }else if(current===2&&index===2){
-  log.insertAdjacentHTML('beforeend','<div class="action-record blocked-record" role="status"><span class="action-symbol" aria-hidden="true">⊘</span><div><strong>조롱 메시지 차단됨</strong><small>차단한 상대의 알림 꺼짐</small></div><span class="off-switch" aria-hidden="true"></span></div>');
  }
- followChat();
+ followChat();done();
 }
-function choose(index){if(revealed)return;choices[current]=index;revealed=true;const o=steps[current].options[index];document.querySelector('#composer').innerHTML='';followLatest=true;performChoice(index,o[0]);
+function runPhoneAction(kind,done){
+ const preview='<img class="operation-photo" src="minseo-silly.png" width="110" height="110" alt="민서 사진">';
+ const reports=['대화랑 사진은 저장했어. 선생님께 도움도 요청했어. 같이 말씀드리자.','상황 알리려고 친구들한테 사진 보냈어.','도윤은 차단했어. 이제 걔가 보내는 메시지는 안 보려고.'];
+ let selected=new Set();
+ document.querySelector('.experience').insertAdjacentHTML('beforeend','<section id="phone-action" class="phone-action" role="dialog" aria-modal="true" aria-label="휴대폰 기능 사용"></section>');
+ const finish=()=>{const overlay=document.querySelector('#phone-action');overlay.innerHTML=`<div class="operation-finished"><div class="operation-check">✓</div><h2>${kind===2?'차단됨':'전송됨'}</h2></div>`;const complete=()=>{overlay.remove();addMessage('나',reports[kind]);done();};if(reduced)complete();else pending.push(setTimeout(complete,1100));};
+ function screen(stage){
+  let title,body,label,go;
+  if(kind===0){
+   if(stage===0){title='화면 캡처';body=`<div class="capture-preview">${preview}<div class="mini-chat">지우 · 오늘 민서 사진 봤어?</div><div class="mini-chat">도윤 · 다른 방에도 올릴까?</div><small>오늘 오후 4:12 · 2학년 3반</small><i class="capture-corner a"></i><i class="capture-corner b"></i></div>`;label='캡처하기';go=()=>screen(1);}
+   else if(stage===1){title='캡처 미리보기';body=`<div class="saved-preview">${preview}<div class="mini-lines"><i></i><i></i><i></i></div></div><div class="destination-row"><span>▧</span><div><strong>사진에 저장</strong><small>사진과 대화 · 시간 포함</small></div></div>`;label='저장';go=()=>screen(2);}
+   else if(stage===2){title='공유 대상';body='<div class="saved-badge">✓ 캡처 저장됨</div><div class="recipient selected"><span class="contact-icon">선</span><div><strong>담임 선생님</strong><small>도움 요청</small></div><span>✓</span></div>';label='선생님께 메시지 작성';go=()=>screen(3);}
+   else{title='담임 선생님';body='<div class="attachment-tag">▧ 캡처 1장</div><div class="outgoing-draft">민서 사진이 허락 없이 공유됐어요. 민서가 더 놀림받을까 걱정하고 있어요. 사진이 더 퍼지지 않도록 도와주세요.</div>';label='보내기';go=finish;}
+  }else if(kind===1){
+   title=stage===0?'사진 공유':'전송 미리보기';
+   if(stage===0){body=`${preview}<div class="recipient-list">${['서연','하준','유나'].map((n,i)=>`<button class="recipient" data-person="${i}" aria-pressed="false"><span class="contact-icon">${n[0]}</span><strong>${n}</strong><span class="recipient-check">○</span></button>`).join('')}</div>`;label='선택한 친구에게 전달';go=()=>{if(selected.size)screen(1);};}
+   else{body=`<div class="attachment-tag">${selected.size}명에게 사진 보내기</div><div class="photo-send-preview">${preview}</div>`;label='보내기';go=finish;}
+  }else{
+   if(stage===0){title='도윤';body='<div class="profile-avatar">도</div><h3 class="profile-name">도윤</h3><div class="profile-menu"><span>알림</span><span>켜짐</span></div><div class="profile-menu"><span>사진 · 동영상</span><span>1</span></div>';label='차단';go=()=>screen(1);}
+   else{title='도윤을 차단할까요?';body='<div class="block-symbol">⊘</div><p class="operation-description">이 상대의 메시지와 알림을 받지 않습니다.</p><div class="blocked-preview"><span>도윤</span><span class="off-switch"></span></div>';label='차단하기';go=finish;}
+  }
+  const overlay=document.querySelector('#phone-action');overlay.innerHTML=`<div class="operation-header"><span class="operation-dot"></span><h2 tabindex="-1">${title}</h2></div><div class="operation-content">${body}</div><div class="operation-footer"><button class="primary" id="operation-next">${label}</button></div>`;
+  overlay.querySelector('h2').focus({preventScroll:true});
+  const next=document.querySelector('#operation-next');next.onclick=go;
+  if(kind===1&&stage===0){next.disabled=true;overlay.querySelectorAll('[data-person]').forEach(button=>button.onclick=()=>{const id=button.dataset.person;if(selected.has(id))selected.delete(id);else selected.add(id);button.setAttribute('aria-pressed',String(selected.has(id)));button.querySelector('.recipient-check').textContent=selected.has(id)?'✓':'○';next.disabled=selected.size===0;});}
+ }
+ screen(0);
+}
+
+function choose(index){if(revealed)return;choices[current]=index;revealed=true;const o=steps[current].options[index];document.querySelector('#composer').innerHTML='';followLatest=true;performChoice(index,o[0],()=>{
  const final=current===steps.length-1;
  const incoming=[[o[1],o[2]]];
  if(!final){current++;incoming.push(['system',current===1?'민서 · 개인 메시지':'잠시 후'],...steps[current].messages);}
  sequence(incoming,()=>{if(final){document.querySelector('#composer').innerHTML='<button class="primary next-step" id="next">내 선택 돌아보기 →</button>';document.querySelector('#next').onclick=()=>{resultPage=0;result();window.scrollTo(0,0);focusHeading();};}else{revealed=false;showChoices();}});
+ });
 }
 motionQuery.addEventListener('change',e=>{reduced=e.matches;document.body.classList.toggle('still',reduced);if(reduced&&finishSequence)finishSequence();});
 function result(){stopSequence();document.body.classList.add('immersed');const last=resultPage===3;

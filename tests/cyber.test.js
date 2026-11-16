@@ -6,7 +6,7 @@ import vm from 'node:vm';
 test('27 cyber choice combinations produce only their own feedback without persistence or network',()=>{
  const source=fs.readFileSync(new URL('../public/cyber/app.js',import.meta.url),'utf8');
  const nodes=new Map(),events={};
- const node=key=>{if(!nodes.has(key))nodes.set(key,{innerHTML:'',hidden:true,setAttribute(){},focus(){},showModal(){},close(){},querySelector:s=>node(s),querySelectorAll:()=>[]});return nodes.get(key);};
+ const node=key=>{if(!nodes.has(key))nodes.set(key,{innerHTML:'',hidden:true,setAttribute(){},focus(){},showModal(){},close(){},querySelector:s=>node(s),querySelectorAll:s=>s==='[data-person]'?[0,1,2].map(i=>{const n=node('person'+i);n.dataset={person:String(i)};return n;}):[]});return nodes.get(key);};
  const deny=()=>{throw new Error('Private activity must not use storage or network');};
  const ctx=vm.createContext({document:{querySelector:node,body:{classList:{remove(){},toggle(){},add(){}}}},clearTimeout(){},window:{matchMedia:()=>({matches:true,addEventListener(){}}),scrollTo(){},addEventListener:(event,fn)=>events[event]=fn},fetch:deny,XMLHttpRequest:deny,localStorage:new Proxy({},{get:deny}),sessionStorage:new Proxy({},{get:deny}),navigator:{sendBeacon:deny}});
  vm.runInContext(source,ctx);
@@ -27,7 +27,7 @@ test('27 cyber choice combinations produce only their own feedback without persi
 test('room switch clears group chat while private conversation continues',()=>{
  const source=fs.readFileSync(new URL('../public/cyber/app.js',import.meta.url),'utf8');
  const nodes=new Map(),timers=new Map();let serial=0;
- const node=key=>{if(!nodes.has(key))nodes.set(key,{innerHTML:'',hidden:true,setAttribute(){},focus(){},scrollTo(){},insertAdjacentHTML(_,html){this.innerHTML+=html;},querySelector:s=>node(s),querySelectorAll:()=>[]});return nodes.get(key);};
+ const node=key=>{if(!nodes.has(key))nodes.set(key,{innerHTML:'',hidden:true,setAttribute(){},focus(){},scrollTo(){},remove(){},insertAdjacentHTML(_,html){this.innerHTML+=html;},querySelector:s=>node(s),querySelectorAll:s=>s==='[data-person]'?[0,1,2].map(i=>{const n=node('person'+i);n.dataset={person:String(i)};return n;}):[]});return nodes.get(key);};
  const ctx=vm.createContext({document:{querySelector:node,body:{classList:{add(){},remove(){},toggle(){}}}},window:{matchMedia:()=>({matches:false,addEventListener(){}}),addEventListener(){},scrollTo(){}},setTimeout:fn=>{timers.set(++serial,fn);return serial;},clearTimeout:id=>timers.delete(id)});
  vm.runInContext(source,ctx);vm.runInContext('play()',ctx);assert.equal(timers.size,1);
  node('#skip').onclick();assert.equal(timers.size,0);
@@ -62,15 +62,31 @@ test('room switch clears group chat while private conversation continues',()=>{
  vm.runInContext('choose(1)',ctx);node('#skip').onclick();
  assert.equal(vm.runInContext('current',ctx),2);
  assert.ok(node('#conversation').innerHTML.includes('다른 반 단톡방에도 올라왔대.'));
- for(const [choice,label] of [[0,'대화 기록 보관됨'],[1,'사진 전달됨'],[2,'조롱 메시지 차단됨']]){
-  const before=(node('#conversation').innerHTML.match(/class="msg/g)||[]).length;
-  vm.runInContext(`performChoice(${choice},steps[2].options[${choice}][0])`,ctx);
-  assert.ok(node('#conversation').innerHTML.includes(label));
-  assert.equal((node('#conversation').innerHTML.match(/class="msg/g)||[]).length,before);
- }
- vm.runInContext('choose(0)',ctx);node('#skip').onclick();
+ const beforeAction=node('#conversation').innerHTML;
+ vm.runInContext('choose(0)',ctx);
+ assert.ok(node('#phone-action').innerHTML.includes('캡처하기'));
+ assert.equal(node('#conversation').innerHTML,beforeAction);
+ node('#operation-next').onclick();assert.ok(node('#phone-action').innerHTML.includes('캡처 미리보기'));
+ node('#operation-next').onclick();assert.ok(node('#phone-action').innerHTML.includes('담임 선생님'));
+ node('#operation-next').onclick();assert.ok(node('#phone-action').innerHTML.includes('도와주세요.'));
+ node('#operation-next').onclick();runNext();
+ assert.ok(node('#conversation').innerHTML.includes('대화랑 사진은 저장했어.'));
+ node('#skip').onclick();
  assert.ok(node('#composer').innerHTML.includes('내 선택 돌아보기'));
  assert.equal(vm.runInContext('choices.length',ctx),3);
+ vm.runInContext('runPhoneAction(1,()=>{})',ctx);
+ assert.equal(node('#operation-next').disabled,true);
+ node('person0').onclick();assert.equal(node('#operation-next').disabled,false);
+ node('#operation-next').onclick();assert.ok(node('#phone-action').innerHTML.includes('1명에게 사진 보내기'));
+ node('#operation-next').onclick();runNext();
+ assert.ok(node('#conversation').innerHTML.includes('상황 알리려고 친구들한테 사진 보냈어.'));
+ vm.runInContext('runPhoneAction(2,()=>{})',ctx);
+ node('#operation-next').onclick();assert.ok(node('#phone-action').innerHTML.includes('도윤을 차단할까요?'));
+ node('#operation-next').onclick();runNext();
+ assert.ok(node('#conversation').innerHTML.includes('도윤은 차단했어.'));
+
+ assert.ok(!vm.runInContext(`message('나','“네 잘못이 아니야.”')`,ctx).includes('“'));
+ assert.ok(!vm.runInContext(`message('나','“네 잘못이 아니야.”')`,ctx).includes('”'));
 
  vm.runInContext('play()',ctx);assert.equal(timers.size,1);
  vm.runInContext('home()',ctx);assert.equal(timers.size,0);
