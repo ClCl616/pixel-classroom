@@ -33,7 +33,8 @@ test('room switch clears group chat while private conversation continues',()=>{
  node('#skip').onclick();assert.equal(timers.size,0);
  assert.equal((node('#conversation').innerHTML.match(/class="msg/g)||[]).length,3);
  assert.equal(vm.runInContext('chatItems.length',ctx),3);
- assert.ok(node('#composer').innerHTML.includes('내 행동 선택'));
+ assert.ok(node('#composer').innerHTML.includes('(웃는 이모티콘을 누른다.)'));
+ assert.equal(vm.runInContext('choiceText(steps[0].options[1][0])',ctx),'“허락 없이 올린 사진이잖아. 공유하지 말자.”');
  const initialChat=node('#conversation').innerHTML;
  vm.runInContext('choose(0)',ctx);
  const runNext=()=>{const [id,fn]=timers.entries().next().value;timers.delete(id);fn();};
@@ -41,7 +42,10 @@ test('room switch clears group chat while private conversation continues',()=>{
  runNext(); // incoming notification, before clearing the old room
  assert.equal(node('#incoming-message').hidden,false);
  assert.ok(node('#conversation').innerHTML.includes('오늘 민서 사진 봤어?'));
- runNext(); // notification finishes, now switch rooms
+ assert.equal(timers.size,0); // no automatic transition
+ vm.runInContext('finishSequence()',ctx); // skipping cannot enter the room
+ assert.equal(node('#incoming-message').hidden,false);
+ node('#incoming-message').onclick(); // explicit tap enters the private room
  assert.equal(node('#incoming-message').hidden,true);
  assert.equal(node('.conversation-head h2').textContent,'민서');
  node('#skip').onclick();

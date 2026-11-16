@@ -136,3 +136,7 @@ npm run build
 시간, 신호, Wi-Fi, 배터리는 시나리오용 장식이며 실제 기기 상태를 수집하지 않습니다. 선택지의 화살표는 제거했습니다.
 
 현재 첨부 이미지: `public/cyber/minseo-silly.png`. 내장 image_gen 편집 모드로 제작. 최종 프롬프트: “Edit the supplied pixel-art classroom illustration for a fictional middle-school chat story. Preserve the same character, outfit, classroom, waving pose, composition and warm sage/cream pixel-art aesthetic. Change only the facial expression to an intentionally silly playful funny face caught by a friend: both eyes squeezed into exaggerated uneven squints, puffed cheeks, eyebrows at different heights, and a comically puckered crooked mouth. Expressive and goofy like a deliberately silly selfie, not frightening or dehumanizing. Keep it respectful, no injury, no sexual content. Crisp visible pixel-art edges, no text or captions.”
+
+### 알림 탭과 대화 기록 탐색
+
+민서 새 메시지 알림은 누를 때까지 유지되며, 알림을 탭하거나 키보드로 활성화해야 개인 채팅방에 들어갑니다. 건너뛰기·동작 감소 설정도 이 대기 단계를 건너뛰지 않습니다. 행동 선택지와 해당 선택 기록은 소괄호로 표시합니다. 채팅 영역만 스크롤되며, 이전 대화를 읽는 중에는 새 메시지가 도착해도 강제로 맨 아래로 이동하지 않습니다.
