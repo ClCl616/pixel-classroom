@@ -34,6 +34,19 @@ test('chat skip and exit cancel pending animation callbacks',()=>{
  assert.equal((node('#conversation').innerHTML.match(/class="msg/g)||[]).length,3);
  assert.equal(vm.runInContext('chatItems.length',ctx),3);
  assert.ok(node('#composer').innerHTML.includes('내 행동 선택'));
+ const initialChat=node('#conversation').innerHTML;
+ vm.runInContext('choose(0)',ctx);node('#skip').onclick();
+ assert.equal(vm.runInContext('current',ctx),1);
+ assert.ok(node('#conversation').innerHTML.startsWith(initialChat));
+ assert.ok(node('#conversation').innerHTML.includes('내 사진 단톡방에 올라온 거 봤어.'));
+ assert.ok(!node('#composer').innerHTML.includes('다음 대화'));
+ vm.runInContext('choose(1)',ctx);node('#skip').onclick();
+ assert.equal(vm.runInContext('current',ctx),2);
+ assert.ok(node('#conversation').innerHTML.includes('다른 반 단톡방에도 올라왔대.'));
+ vm.runInContext('choose(0)',ctx);node('#skip').onclick();
+ assert.ok(node('#composer').innerHTML.includes('내 선택 돌아보기'));
+ assert.equal(vm.runInContext('choices.length',ctx),3);
+
  vm.runInContext('play()',ctx);assert.equal(timers.size,1);
  node('#exit').onclick();assert.equal(timers.size,0);
  assert.ok(node('#app').innerHTML.includes('대화에 들어가기'));

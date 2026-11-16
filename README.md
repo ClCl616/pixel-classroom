@@ -122,3 +122,10 @@ npm run build
 ### 한 화면 진행
 
 채팅은 말풍선이 순서대로 누적되며 새 메시지가 들어오면 자동으로 위로 이동합니다. 채팅 이전/다음 버튼과 반복 안내 문구는 제거했습니다. 선택지는 A·B·C와 굵은 테두리, 눌림 효과로 구분합니다. 결과는 세 가지 선택 해설과 실천 문장을 총 네 화면으로 나누었습니다. 360×640 및 320×568 세로 화면에서 선택지와 결과를 확인했습니다. 높이 440px 이하의 가로 화면은 내용 잘림을 방지하기 위해 스크롤을 허용합니다.
+
+
+### 연속 대화와 이미지
+
+선택 후 상대의 답장과 다음 상황의 메시지가 같은 채팅 DOM에 추가됩니다. 중간 ‘다음 대화’ 버튼과 단계 숫자, 시작 화면의 가상 체험 문구를 제거했습니다. 마지막 결과만 별도로 확인합니다.
+
+이미지: `public/cyber/minseo-classroom.png`. 기본 내장 image_gen으로 생성. 프롬프트: “Create a single square pixel art illustration for an image attachment inside a Korean middle school classroom chat simulator. A fictional middle school student Minseo with short dark hair, cream shirt and muted mint school vest, at a classroom desk, turning to wave at a friend, eyes caught mid-blink and a naturally surprised innocent expression. Warm classroom afternoon, simple desk and green chalkboard background. Authentic crisp chunky 16-bit pixel art with a restrained sage green, cream, peach and dark forest palette matching a pixel classroom app. The student is portrayed respectfully, no ridicule or distorted face. Medium shot, clear readable silhouette, subject centered. No letters, captions, UI, logos or watermarks. Not a real person or photograph.”
