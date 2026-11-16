@@ -24,7 +24,7 @@ test('27 cyber choice combinations produce only their own feedback without persi
  assert.equal(vm.runInContext('choices.length',ctx),0);
 });
 
-test('chat skip and exit cancel pending animation callbacks',()=>{
+test('room switch clears group chat while private conversation continues',()=>{
  const source=fs.readFileSync(new URL('../public/cyber/app.js',import.meta.url),'utf8');
  const nodes=new Map(),timers=new Map();let serial=0;
  const node=key=>{if(!nodes.has(key))nodes.set(key,{innerHTML:'',hidden:true,setAttribute(){},focus(){},scrollTo(){},insertAdjacentHTML(_,html){this.innerHTML+=html;},querySelector:s=>node(s),querySelectorAll:()=>[]});return nodes.get(key);};
@@ -37,7 +37,9 @@ test('chat skip and exit cancel pending animation callbacks',()=>{
  const initialChat=node('#conversation').innerHTML;
  vm.runInContext('choose(0)',ctx);node('#skip').onclick();
  assert.equal(vm.runInContext('current',ctx),1);
- assert.ok(node('#conversation').innerHTML.startsWith(initialChat));
+ assert.ok(!node('#conversation').innerHTML.includes('오늘 민서 사진 봤어?'));
+ assert.equal(node('.conversation-head h2').textContent,'민서');
+ assert.equal(vm.runInContext('chatItems.length',ctx),2);
  assert.ok(node('#conversation').innerHTML.includes('내 사진 단톡방에 올라온 거 봤어.'));
  assert.ok(!node('#composer').innerHTML.includes('다음 대화'));
  vm.runInContext('choose(1)',ctx);node('#skip').onclick();
@@ -48,6 +50,6 @@ test('chat skip and exit cancel pending animation callbacks',()=>{
  assert.equal(vm.runInContext('choices.length',ctx),3);
 
  vm.runInContext('play()',ctx);assert.equal(timers.size,1);
- node('#exit').onclick();assert.equal(timers.size,0);
+ vm.runInContext('home()',ctx);assert.equal(timers.size,0);
  assert.ok(node('#app').innerHTML.includes('대화에 들어가기'));
 });

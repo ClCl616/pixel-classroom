@@ -117,7 +117,7 @@ npm run build
 
 ### 몰입형 체험
 
-채팅이 순서대로 나타나고 입력 중 표시, 선택지 등장, 응답 전환을 애니메이션으로 표현합니다. 체험 중에는 사이트 머리말·꼬리말과 교육 해설을 숨기고, 결과 화면에서 해설을 제공합니다. 대화 바로 보기 및 움직임 줄이기를 지원하며 OS의 동작 감소 설정도 반영합니다. 나가기·장면 이동 시 대기 타이머를 취소합니다.
+채팅이 순서대로 나타나고 입력 중 표시, 선택지 등장, 응답 전환을 애니메이션으로 표현합니다. 체험 중에는 사이트 머리말·꼬리말과 교육 해설을 숨기고, 결과 화면에서 해설을 제공합니다. 대화 바로 보기를 지원하며 OS의 동작 감소 설정을 자동 반영합니다. 화면의 움직임 토글·나가기 버튼은 제거했습니다. 페이지 종료·재시작 시 대기 타이머를 취소합니다.
 
 ### 한 화면 진행
 
@@ -126,6 +126,13 @@ npm run build
 
 ### 연속 대화와 이미지
 
-선택 후 상대의 답장과 다음 상황의 메시지가 같은 채팅 DOM에 추가됩니다. 중간 ‘다음 대화’ 버튼과 단계 숫자, 시작 화면의 가상 체험 문구를 제거했습니다. 마지막 결과만 별도로 확인합니다.
+같은 채팅방의 메시지는 누적됩니다. 단톡방에서 민서 개인 채팅으로 바뀌는 시점에는 상단 이름·시간을 갱신하고 이전 방의 대화를 비운 뒤 새 메시지를 표시합니다. 중간 ‘다음 대화’ 버튼과 단계 숫자, 시작 화면의 가상 체험 문구를 제거했습니다. 마지막 결과만 별도로 확인합니다.
 
 이미지: `public/cyber/minseo-classroom.png`. 기본 내장 image_gen으로 생성. 프롬프트: “Create a single square pixel art illustration for an image attachment inside a Korean middle school classroom chat simulator. A fictional middle school student Minseo with short dark hair, cream shirt and muted mint school vest, at a classroom desk, turning to wave at a friend, eyes caught mid-blink and a naturally surprised innocent expression. Warm classroom afternoon, simple desk and green chalkboard background. Authentic crisp chunky 16-bit pixel art with a restrained sage green, cream, peach and dark forest palette matching a pixel classroom app. The student is portrayed respectfully, no ridicule or distorted face. Medium shot, clear readable silhouette, subject centered. No letters, captions, UI, logos or watermarks. Not a real person or photograph.”
+
+
+### 휴대폰 화면 업데이트
+
+시간, 신호, Wi-Fi, 배터리는 시나리오용 장식이며 실제 기기 상태를 수집하지 않습니다. 선택지의 화살표는 제거했습니다.
+
+현재 첨부 이미지: `public/cyber/minseo-silly.png`. 내장 image_gen 편집 모드로 제작. 최종 프롬프트: “Edit the supplied pixel-art classroom illustration for a fictional middle-school chat story. Preserve the same character, outfit, classroom, waving pose, composition and warm sage/cream pixel-art aesthetic. Change only the facial expression to an intentionally silly playful funny face caught by a friend: both eyes squeezed into exaggerated uneven squints, puffed cheeks, eyebrows at different heights, and a comically puckered crooked mouth. Expressive and goofy like a deliberately silly selfie, not frightening or dehumanizing. Keep it respectful, no injury, no sexual content. Crisp visible pixel-art edges, no text or captions.”
