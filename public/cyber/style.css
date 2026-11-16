@@ -32,3 +32,39 @@ body>footer{display:none}body>header{height:70px}body:not(.immersed) main{height
 
 /* Capture behaves as a single fitted image, never as a scroll panel. */
 .operation-content:has(.actual-capture){overflow:hidden;justify-content:flex-start}.actual-capture,.saved-preview.actual-capture{position:relative;flex:1;min-height:0;max-height:none;max-width:none;width:100%;padding:0;overflow:hidden;align-self:stretch;transform:none}.capture-history{position:absolute;top:8px;left:50%;width:260px;max-height:none!important;height:auto;overflow:visible;transform-origin:top center;box-sizing:border-box;padding:8px;scrollbar-width:none}.capture-photo img{width:72px;height:72px}.capture-message{margin:6px 0}.capture-room{padding-bottom:6px;margin-bottom:8px}.destination-row{flex-shrink:0}.ui-icon{width:22px;height:22px;display:inline-block;vertical-align:middle;flex-shrink:0}.notification-icon .ui-icon{width:25px;height:25px}.chat-avatar .ui-icon{width:23px;height:23px}.operation-check .ui-icon{width:38px;height:38px}.block-symbol .ui-icon{width:70px;height:70px}.saved-badge,.attachment-tag{display:flex;align-items:center;gap:6px}.saved-badge .ui-icon,.attachment-tag .ui-icon,.recipient-check .ui-icon{width:18px;height:18px}
+
+/* A focused reflection, contained within each screen. */
+.reflection{overflow:hidden}
+.reflection .reflection-content{min-height:0;padding:clamp(16px,4vh,40px) clamp(20px,5vw,44px);overflow:hidden}
+.reflection .result-card{display:flex;flex-direction:column;gap:clamp(20px,4vh,36px);padding:0;border:0;box-shadow:none;background:transparent}
+.reflection .selected-action{padding:18px 20px;background:#e6eddf;border-left:4px solid #7b9a68;animation:rise-in .35s both}
+.reflection .selected-action small{font-size:11px;color:#52664f}
+.reflection .selected-action p{font-size:15px;line-height:1.65;font-weight:600;margin:8px 0 0}
+.reflection .choice-feedback{animation:rise-in .45s .12s both}
+.reflection .choice-feedback h2{font-size:clamp(23px,4vw,32px);line-height:1.35;margin:0 0 18px;letter-spacing:-1px}
+.reflection .choice-feedback p{font-size:16px;line-height:1.8;margin:0}
+.reflection .choice-feedback .feedback-impact{font-weight:700}
+.reflection .choice-feedback .feedback-advice{margin-top:14px;color:#52664f}
+.reflection .reflection-controls{padding:16px 24px 24px;gap:12px;border:0}
+.reflection-controls .primary{margin-left:auto;min-width:130px}
+.practice-finish{display:flex;flex-direction:column;gap:18px}
+.reflection .practice-finish h2{font-size:clamp(28px,5vw,40px);margin:0}
+.reflection .practice-finish label{margin:0;color:#52664f}
+.reflection .practice-finish textarea{height:140px;min-height:0;font-size:15px}
+@media(max-height:650px),(max-width:380px){
+ .reflection .reflection-content{padding:16px 20px}
+ .reflection .result-card{gap:20px}
+ .reflection .selected-action{padding:12px 14px}
+ .reflection .selected-action p{font-size:13px;line-height:1.6;margin-top:6px}
+ .reflection .choice-feedback h2{font-size:22px;margin-bottom:12px}
+ .reflection .choice-feedback p{font-size:13px;line-height:1.7}
+ .reflection .choice-feedback .feedback-advice{margin-top:10px}
+ .reflection .reflection-controls{padding:12px 20px 20px}
+}
+@media(max-height:450px) and (min-width:560px){
+ .reflection .result-card{display:grid;grid-template-columns:1fr 1.4fr;align-items:start;gap:24px}
+ .reflection .practice-finish{display:grid;grid-template-columns:1fr 1fr;gap:12px 24px}
+ .reflection .practice-finish h2{grid-row:span 2}
+ .reflection .practice-finish textarea{height:100px}
+}
+.reflection{animation:reflection-in .35s both}@keyframes reflection-in{from{opacity:0}to{opacity:1}}

@@ -128,13 +128,14 @@ function choose(index){if(revealed)return;choices[current]=index;revealed=true;c
  });
 }
 motionQuery.addEventListener('change',e=>{reduced=e.matches;document.body.classList.toggle('still',reduced);if(reduced&&finishSequence)finishSequence();});
-function result(){stopSequence();document.body.classList.add('immersed');const last=resultPage===3;
+function result(){
+ stopSequence();document.body.classList.add('immersed');const last=resultPage===3;
  const s=steps[resultPage],o=s?.options[choices[resultPage]];
- app.innerHTML=`<section class="experience reflection"><div class="experience-top"><button class="text-btn" id="home">← 처음으로</button><span class="chapter">돌아보기 ${resultPage+1} / 4</span><span class="private-label">나만 보는 결과</span></div><div class="reflection-content">${!last?`<p class="eyebrow">${s.skill}</p><h2>${o[4]}</h2><article class="result-card"><small>내가 고른 행동</small><p><b>${choiceText(o[0])}</b></p><p>${o[3]}</p></article>`:`<p class="eyebrow">다음엔 이렇게 말해볼래요</p><h2>친구에게 건넬 한 문장.</h2><label for="sentence" class="sr-only">친구를 지지하는 문장</label><textarea id="sentence" maxlength="300" rows="3" placeholder="네 잘못이 아니야. 선생님께 같이 말씀드릴까?"></textarea>`}</div><div class="reflection-controls"><button class="secondary" id="result-back" ${resultPage===0?'disabled':''}>← 이전</button><button class="primary" id="result-next">${last?'다시 체험하기':'다음'} →</button></div></section>`;
- document.querySelector('#home').onclick=()=>{choices=[];practiceText='';home();focusHeading();};
+ const feedback=o?.[3].match(/^(.+?[.!?])\s+([\s\S]+)$/);
+ app.innerHTML=`<section class="experience reflection"><div class="reflection-content">${!last?`<article class="result-card"><div class="selected-action"><small>내가 선택한 행동</small><p>${choiceText(o[0])}</p></div><div class="choice-feedback"><h2>${o[4]}</h2><p class="feedback-impact">${feedback?feedback[1]:o[3]}</p>${feedback?`<p class="feedback-advice">${feedback[2]}</p>`:''}</div></article>`:`<div class="practice-finish"><h2>친구에게 건넬<br>한 문장.</h2><label for="sentence">다음에는 어떻게 말하고 싶나요?</label><textarea id="sentence" maxlength="300" rows="3" placeholder="네 잘못이 아니야. 선생님께 같이 말씀드릴까?"></textarea></div>`}</div><div class="reflection-controls">${resultPage>0?'<button class="secondary" id="result-back">이전</button>':''}<button class="primary" id="result-next">${last?'종료':'다음'}</button></div></section>`;
  if(last){document.querySelector('#sentence').value=practiceText;document.querySelector('#sentence').oninput=e=>{practiceText=e.target.value;};}
- document.querySelector('#result-back').onclick=()=>{if(resultPage>0){resultPage--;result();focusHeading();}};
- document.querySelector('#result-next').onclick=()=>{if(last){current=0;choices=[];practiceText='';revealed=false;play();}else{resultPage++;result();focusHeading();}};
+ if(resultPage>0)document.querySelector('#result-back').onclick=()=>{resultPage--;result();focusHeading();};
+ document.querySelector('#result-next').onclick=()=>{if(last){choices=[];chatItems=[];practiceText='';current=0;resultPage=0;revealed=false;home();focusHeading();}else{resultPage++;result();focusHeading();}};
 }
 
 home();

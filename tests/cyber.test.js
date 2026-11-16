@@ -16,10 +16,22 @@ test('27 cyber choice combinations produce only their own feedback without persi
    vm.runInContext(`resultPage=${page};result();`,ctx);
    const html=node('#app').innerHTML;
    const expected=vm.runInContext(`steps[${page}].options[choices[${page}]][3]`,ctx);
-   assert.ok(html.includes(expected));
+   assert.ok(html.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').includes(expected));
+   assert.ok(html.includes(vm.runInContext(`choiceText(steps[${page}].options[choices[${page}]][0])`,ctx)));
+   assert.ok(html.includes('내가 선택한 행동'));
+   assert.ok(!html.includes('나만 보는 결과'));
+   assert.ok(!html.includes('처음으로'));
+   assert.ok(!html.includes('돌아보기 '));
    assert.equal((html.match(/class="result-card"/g)||[]).length,1);
   }
  }
+ vm.runInContext("resultPage=3;practiceText='함께 도와줄게';result();",ctx);
+ assert.equal(node('#sentence').value,'함께 도와줄게');
+ assert.ok(node('#app').innerHTML.includes('>종료</button>'));
+ node('#result-next').onclick();
+ assert.equal(vm.runInContext('choices.length',ctx),0);
+ assert.equal(vm.runInContext('practiceText',ctx),'');
+ assert.ok(node('#app').innerHTML.includes('대화에 들어가기'));
  events.pagehide();assert.ok(node('#app').innerHTML.includes('대화에 들어가기'));
  assert.equal(vm.runInContext('choices.length',ctx),0);
 });
