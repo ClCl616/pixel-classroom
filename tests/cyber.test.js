@@ -37,6 +37,9 @@ test('room switch clears group chat while private conversation continues',()=>{
  assert.equal(vm.runInContext('choiceText(steps[0].options[1][0])',ctx),'“허락 없이 올린 사진이잖아. 공유하지 말자.”');
  const initialChat=node('#conversation').innerHTML;
  vm.runInContext('choose(0)',ctx);
+ assert.ok(node('#photo-reactions').innerHTML.includes('😂'));
+ assert.ok(!node('#conversation').innerHTML.includes('(웃는 이모티콘을 누른다.)'));
+ assert.equal((node('#conversation').innerHTML.match(/class="msg/g)||[]).length,3);
  const runNext=()=>{const [id,fn]=timers.entries().next().value;timers.delete(id);fn();};
  runNext(); // group reply
  runNext(); // incoming notification, before clearing the old room
@@ -59,6 +62,12 @@ test('room switch clears group chat while private conversation continues',()=>{
  vm.runInContext('choose(1)',ctx);node('#skip').onclick();
  assert.equal(vm.runInContext('current',ctx),2);
  assert.ok(node('#conversation').innerHTML.includes('다른 반 단톡방에도 올라왔대.'));
+ for(const [choice,label] of [[0,'대화 기록 보관됨'],[1,'사진 전달됨'],[2,'조롱 메시지 차단됨']]){
+  const before=(node('#conversation').innerHTML.match(/class="msg/g)||[]).length;
+  vm.runInContext(`performChoice(${choice},steps[2].options[${choice}][0])`,ctx);
+  assert.ok(node('#conversation').innerHTML.includes(label));
+  assert.equal((node('#conversation').innerHTML.match(/class="msg/g)||[]).length,before);
+ }
  vm.runInContext('choose(0)',ctx);node('#skip').onclick();
  assert.ok(node('#composer').innerHTML.includes('내 선택 돌아보기'));
  assert.equal(vm.runInContext('choices.length',ctx),3);
