@@ -12,10 +12,13 @@ test('27 cyber choice combinations produce only their own feedback without persi
  vm.runInContext(source,ctx);
  for(let a=0;a<3;a++)for(let b=0;b<3;b++)for(let c=0;c<3;c++){
   const picks=[a,b,c];vm.runInContext(`choices=${JSON.stringify(picks)};result();`,ctx);
-  const html=node('#app').innerHTML;
-  const expected=vm.runInContext('steps.map((s,i)=>s.options[choices[i]][3])',ctx);
-  expected.forEach(text=>assert.ok(html.includes(text)));
-  assert.equal((html.match(/class="result-card"/g)||[]).length,3);
+  for(let page=0;page<3;page++){
+   vm.runInContext(`resultPage=${page};result();`,ctx);
+   const html=node('#app').innerHTML;
+   const expected=vm.runInContext(`steps[${page}].options[choices[${page}]][3]`,ctx);
+   assert.ok(html.includes(expected));
+   assert.equal((html.match(/class="result-card"/g)||[]).length,1);
+  }
  }
  events.pagehide();assert.ok(node('#app').innerHTML.includes('대화에 들어가기'));
  assert.equal(vm.runInContext('choices.length',ctx),0);
@@ -28,7 +31,10 @@ test('chat skip and exit cancel pending animation callbacks',()=>{
  const ctx=vm.createContext({document:{querySelector:node,body:{classList:{add(){},remove(){},toggle(){}}}},window:{matchMedia:()=>({matches:false,addEventListener(){}}),addEventListener(){},scrollTo(){}},setTimeout:fn=>{timers.set(++serial,fn);return serial;},clearTimeout:id=>timers.delete(id)});
  vm.runInContext(source,ctx);vm.runInContext('play()',ctx);assert.equal(timers.size,1);
  node('#skip').onclick();assert.equal(timers.size,0);
- assert.equal((node('#conversation').innerHTML.match(/class="msg/g)||[]).length,3);
+ assert.equal((node('#conversation').innerHTML.match(/class="msg/g)||[]).length,1);
+ assert.equal(vm.runInContext('chatItems.length',ctx),3);
+ node('#previous-message').onclick();
+ assert.ok(node('#conversation').innerHTML.includes('허락 없이 공유된 사진'));
  assert.ok(node('#composer').innerHTML.includes('나라면 어떻게 할까?'));
  vm.runInContext('play()',ctx);assert.equal(timers.size,1);
  node('#exit').onclick();assert.equal(timers.size,0);
