@@ -126,7 +126,8 @@ test('capture keeps the actual group reply, own speech and reaction for each bra
   assert.ok(capture.includes(reply));
   assert.equal(capture.includes('😂 1'),pick===0);
   assert.equal(capture.includes('허락 없이 올린 사진이잖아. 공유하지 말자.'),pick===1);
-  assert.equal(capture.includes('읽음 ✓✓'),pick===2);
+  assert.ok(!capture.includes('읽음'));
+  if(pick===2){assert.ok(!capture.includes('(사진을 전달하지 않고'));assert.ok(!node('#conversation').innerHTML.includes('read-receipt'));}
  }
  vm.runInContext('home()',ctx);assert.equal(vm.runInContext('groupHistory.length',ctx),0);
 });
