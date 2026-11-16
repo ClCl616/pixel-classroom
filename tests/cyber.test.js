@@ -8,7 +8,7 @@ test('27 cyber choice combinations produce only their own feedback without persi
  const nodes=new Map(),events={};
  const node=key=>{if(!nodes.has(key))nodes.set(key,{innerHTML:'',hidden:true,setAttribute(){},focus(){},showModal(){},close(){},querySelector:s=>node(s),querySelectorAll:()=>[]});return nodes.get(key);};
  const deny=()=>{throw new Error('Private activity must not use storage or network');};
- const ctx=vm.createContext({document:{querySelector:node},window:{scrollTo(){},addEventListener:(event,fn)=>events[event]=fn},fetch:deny,XMLHttpRequest:deny,localStorage:new Proxy({},{get:deny}),sessionStorage:new Proxy({},{get:deny}),navigator:{sendBeacon:deny}});
+ const ctx=vm.createContext({document:{querySelector:node,body:{classList:{remove(){},toggle(){},add(){}}}},clearTimeout(){},window:{matchMedia:()=>({matches:true,addEventListener(){}}),scrollTo(){},addEventListener:(event,fn)=>events[event]=fn},fetch:deny,XMLHttpRequest:deny,localStorage:new Proxy({},{get:deny}),sessionStorage:new Proxy({},{get:deny}),navigator:{sendBeacon:deny}});
  vm.runInContext(source,ctx);
  for(let a=0;a<3;a++)for(let b=0;b<3;b++)for(let c=0;c<3;c++){
   const picks=[a,b,c];vm.runInContext(`choices=${JSON.stringify(picks)};result();`,ctx);
@@ -17,6 +17,20 @@ test('27 cyber choice combinations produce only their own feedback without persi
   expected.forEach(text=>assert.ok(html.includes(text)));
   assert.equal((html.match(/class="result-card"/g)||[]).length,3);
  }
- events.pagehide();assert.ok(node('#app').innerHTML.includes('내 선택으로 시작하기'));
+ events.pagehide();assert.ok(node('#app').innerHTML.includes('대화에 들어가기'));
  assert.equal(vm.runInContext('choices.length',ctx),0);
+});
+
+test('chat skip and exit cancel pending animation callbacks',()=>{
+ const source=fs.readFileSync(new URL('../public/cyber/app.js',import.meta.url),'utf8');
+ const nodes=new Map(),timers=new Map();let serial=0;
+ const node=key=>{if(!nodes.has(key))nodes.set(key,{innerHTML:'',hidden:true,setAttribute(){},focus(){},insertAdjacentHTML(_,html){this.innerHTML+=html;},querySelector:s=>node(s),querySelectorAll:()=>[]});return nodes.get(key);};
+ const ctx=vm.createContext({document:{querySelector:node,body:{classList:{add(){},remove(){},toggle(){}}}},window:{matchMedia:()=>({matches:false,addEventListener(){}}),addEventListener(){},scrollTo(){}},setTimeout:fn=>{timers.set(++serial,fn);return serial;},clearTimeout:id=>timers.delete(id)});
+ vm.runInContext(source,ctx);vm.runInContext('play()',ctx);assert.equal(timers.size,1);
+ node('#skip').onclick();assert.equal(timers.size,0);
+ assert.equal((node('#conversation').innerHTML.match(/class="msg/g)||[]).length,3);
+ assert.ok(node('#composer').innerHTML.includes('나라면 어떻게 할까?'));
+ vm.runInContext('play()',ctx);assert.equal(timers.size,1);
+ node('#exit').onclick();assert.equal(timers.size,0);
+ assert.ok(node('#app').innerHTML.includes('대화에 들어가기'));
 });
