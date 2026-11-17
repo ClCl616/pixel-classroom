@@ -87,15 +87,21 @@ function liveDemo(action,p) {
     if(!name||name.length>20||/[\u0000-\u001f\u007f]/.test(name))throw new Error('이름을 1~20자로 적어 주세요.');
     const existing=current.answers.find(a=>a.uid===uid);
     if(existing&&(existing.name!==name||existing.choice!==p.choice||existing.reason!==reason))throw new Error('이미 제출한 응답이 있습니다.');
-    if(!existing)current.answers.push({uid,name,choice:p.choice,reason,seat:current.answers.length+1});persist();
+    if(!existing)current.answers.push({uid,name,choice:p.choice,reason,seat:randomDemoSeat(current)});persist();
   }
   if(action==='seed'){
     if(current.status!=='open')throw new Error('응답을 다시 열어 주세요.');
     const i=current.answers.length;
     const samples=[['민서','switch','가능한 한 많은 사람을 보호하고 싶어요.'],['하준','stay','한 사람을 일부러 위험하게 하고 싶지 않아요.'],['지우','hold','두 선택 모두 누군가 위험해서 고민돼요.']];
     const [name,choice,reason]=samples[i%3];
-    current.answers.push({uid:crypto.randomUUID(),name,choice,reason,seat:i+1});persist();
+    current.answers.push({uid:crypto.randomUUID(),name,choice,reason,seat:randomDemoSeat(current)});persist();
   }
   const own=current.answers.find(a=>a.uid===uid);
   return {...current,count:current.answers.length,own:own?{name:own.name,choice:own.choice,reason:own.reason,seat:own.seat}:null,answers:['teacher_get','start','state','finish','seed'].includes(action)?current.answers.map(({uid,...answer})=>answer):null};
+}
+
+function randomDemoSeat(room) {
+ const occupied=new Set(room.answers.map(a=>a.seat));
+ const free=Array.from({length:Math.max(room.expected,room.answers.length+1)},(_,i)=>i+1).filter(seat=>!occupied.has(seat));
+ return free[Math.floor(Math.random()*free.length)];
 }

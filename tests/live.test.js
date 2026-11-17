@@ -33,18 +33,26 @@ test('live classroom scopes named answers to owner, prevents duplicate seats, an
  const answer={...p,name:'민서',choice:'switch',reason:'피해를 줄이고 싶어요.'};
  for(const name of ['', ' ', '가'.repeat(21),'민\n서'])await assert.rejects(()=>rpc('submit',{...answer,name}),/이름/);
  await assert.rejects(()=>rpc('submit',{...answer,reason:'두\n줄'}),/의견/);
- const submitted=await rpc('submit',answer);assert.equal(submitted.own.seat,1);assert.equal(submitted.answers,null);
- assert.equal((await rpc('submit',answer)).count,1);
+ const submitted=await rpc('submit',answer);assert.ok(submitted.own.seat>=1&&submitted.own.seat<=15);assert.equal(submitted.answers,null);
+ assert.equal((await rpc('submit',answer)).count,1);assert.equal((await rpc('get',p)).own.seat,submitted.own.seat);
  await assert.rejects(()=>rpc('submit',{...answer,choice:'hold'}),/이미 제출/);
  await as(student2);const another=await rpc('get',p);assert.equal(another.own,null);assert.equal(another.answers,null);assert.ok(!JSON.stringify(another).includes('민서'));
  await rpc('submit',{...answer,name:'민서',choice:'hold'}); // Same names are allowed; identity is the session.
- await as(teacher);const all=await rpc('teacher_get',p);assert.equal(all.answers.length,2);assert.deepEqual(all.answers.map(a=>a.seat),[1,2]);assert.equal(all.answers[0].name,'민서');assert.ok(!JSON.stringify(all.answers).includes('user_id'));
+ await as(teacher);const all=await rpc('teacher_get',p);assert.equal(all.answers.length,2);assert.equal(new Set(all.answers.map(a=>a.seat)).size,2);assert.ok(all.answers.every(a=>a.seat>=1&&a.seat<=15));assert.equal(all.answers[0].name,'민서');assert.ok(!JSON.stringify(all.answers).includes('user_id'));
  await rpc('state',{...p,status:'closed'});
  await as(student);await assert.rejects(()=>rpc('submit',answer),/마감/);assert.equal((await rpc('get',p)).own.name,'민서');
  await as(teacher);await rpc('state',{...p,status:'open'});assert.equal((await rpc('teacher_get',p)).count,2);
  await rpc('finish',p);assert.equal((await rpc('teacher_session')).active,null);
  await as(student);assert.equal(await rpc('active'),null);await assert.rejects(()=>rpc('submit',answer),/마감/);
  await as(teacher);const next=await rpc('start');assert.notEqual(next.code,room.code);assert.equal(next.count,0);assert.equal((await rpc('teacher_get',p)).count,2);await assert.rejects(()=>rpc('state',{...p,status:'open'}),/종료/);
+ // Fill every seat and overflow once: no duplicate seats or missing assignments.
+ for(let i=10;i<26;i++){
+  const id=`00000000-0000-4000-8000-${String(i).padStart(12,'0')}`;
+  await db.exec('reset role');await db.query('insert into auth.users values($1)',[id]);await as(id);
+  await rpc('submit',{code:next.code,name:'학생',choice:'hold',reason:'고민 중이에요.'});
+ }
+ await as(teacher);const filled=await rpc('teacher_get',{code:next.code});
+ assert.deepEqual(filled.answers.map(a=>a.seat).sort((a,b)=>a-b),Array.from({length:16},(_,i)=>i+1));
  await as('');await assert.rejects(()=>rpc('active'),/로그인/);
  await db.close();
 });

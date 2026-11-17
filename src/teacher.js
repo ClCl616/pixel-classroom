@@ -1,7 +1,12 @@
 import {liveCall, login, logout, hasTeacherSession, configured, isDemo} from './api.js';
 import {choices, escapeHtml as esc} from './domain.js';
 import './teacher.css';
+import {bindTeacherMenuKey} from './teacher-menu-key.js';
 
+const icon = name => {
+  const paths={classroom:'<path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18"/>',fullscreen:'<path d="M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6"/>',close:'<path d="m6 6 12 12M6 18 18 6"/>',previous:'<path d="m14 5-7 7 7 7M7 12h14"/>',next:'<path d="m10 5 7 7-7 7M3 12h14"/>',switch:'<path d="M5 19 19 5M8 5h11v11"/>',stay:'<path d="M12 20V4m-7 7 7-7 7 7"/>',hold:'<path d="M5 12h2m4 0h2m4 0h2"/>'};
+  return `<svg class="teacher-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">${paths[name]}</svg>`;
+};
 const pupil = seat => `<svg class="pupil" viewBox="0 0 32 40" aria-hidden="true" shape-rendering="crispEdges"><path fill="#173d37" d="M8 2h16v4h4v15H4V6h4z"/><path fill="#edbc96" d="M8 8h16v14H8z"/><path fill="#173d37" d="M10 12h3v3h-3zM19 12h3v3h-3zM13 19h6v2h-6z"/><path fill="${['#88b9a1','#e4a47f','#b2a0ce'][seat%3]}" d="M6 23h20v12H6z"/><path fill="#173d37" d="M10 35h5v5h-5zM18 35h5v5h-5z"/></svg>`;
 export async function startTeacher({app, homeUrl}) {
   document.body.classList.add('teacher-console');
@@ -12,8 +17,8 @@ export async function startTeacher({app, homeUrl}) {
   window.addEventListener('pagehide',stop,{once:true});
   const demoLabel=isDemo?'<span class="teacher-demo">연습 모드 · 이 브라우저에서만 연결</span>':'';
   const message=text=>{const el=$('#teacher-message');if(el)el.textContent=text;};
-  function shell(content,back=false){
-    stop();app.innerHTML=`<div class="teacher-app"><div class="teacher-top"><a href="${homeUrl}" class="teacher-brand">▦ 픽셀 클래스룸</a>${demoLabel}<div>${back?'<button id="teacher-dashboard">대시보드</button>':''}<button id="teacher-logout">로그아웃</button></div></div>${content}<p id="teacher-message" role="status"></p></div>`;
+  function shell(content,back=false,board=false){
+    stop();app.innerHTML=`<div class="teacher-app"><div class="teacher-top"><a href="${homeUrl}" class="teacher-brand">${icon('classroom')}<span>픽셀 클래스룸</span></a>${demoLabel}${board?'':`<div>${back?'<button id="teacher-dashboard">대시보드</button>':''}<button id="teacher-logout">로그아웃</button></div>`}</div>${content}<p id="teacher-message" role="status"></p></div>`;
     $('#teacher-logout').onclick=()=>run(async()=>{await logout();stop();location.href=homeUrl;});
     if(back)$('#teacher-dashboard').onclick=()=>run(dashboard);
   }
@@ -36,7 +41,9 @@ export async function startTeacher({app, homeUrl}) {
   async function openBoard(code){
     current=await liveCall('teacher_get',{code});seen=new Set();page=0;
     const u=new URL(location.href);u.searchParams.set('room',code);history.replaceState(null,'',u);
-    shell(`<section class="classroom-stage"><div class="classroom-board"><div><span class="teacher-eyebrow">우리 반 생각 교실</span><h1>트롤리 딜레마</h1><p id="class-state"></p></div><div class="class-total"><strong id="class-count">0</strong><span id="class-expected"></span><small id="class-connection">연결됨</small></div></div><div class="classroom-toolbar"><button id="class-toggle"></button><button id="class-fullscreen">전체 화면 ⛶</button><button id="class-finish">활동 종료</button>${isDemo?'<button id="class-seed">예시 학생 입장</button>':''}</div><div class="desk-grid" id="desk-grid" aria-label="학생 응답 책상"></div><div class="classroom-bottom"><span id="class-hint">학생이 홈에서 이름·선택·의견을 제출하면 자리에 앉아요.</span><div><button id="desk-prev" aria-label="이전 책상">←</button><span id="desk-page"></span><button id="desk-next" aria-label="다음 책상">→</button></div></div></section><dialog class="desk-dialog" id="desk-dialog" aria-labelledby="desk-dialog-title"><form method="dialog"><button aria-label="의견 닫기">닫기 ×</button></form><div id="desk-detail"></div></dialog>`,true);
+    shell(`<section class="classroom-stage"><div class="classroom-board"><div><span class="teacher-eyebrow">우리 반 생각 교실</span><h1>트롤리 딜레마</h1></div><div class="class-total"><strong id="class-count">0</strong><span id="class-expected"></span></div></div><div class="desk-grid" id="desk-grid" aria-label="학생 응답 책상"></div><nav class="classroom-bottom" id="desk-pagination" aria-label="책상 페이지" hidden><button id="desk-prev" aria-label="이전 책상">${icon('previous')}</button><span id="desk-page"></span><button id="desk-next" aria-label="다음 책상">${icon('next')}</button></nav></section>
+    <dialog class="desk-dialog" id="desk-dialog" aria-labelledby="desk-dialog-title"><form method="dialog"><button aria-label="의견 닫기">${icon('close')}</button></form><div id="desk-detail"></div></dialog>
+    <dialog class="teacher-controls-dialog" id="teacher-controls" aria-labelledby="teacher-controls-title"><form method="dialog"><button aria-label="교사 메뉴 닫기">${icon('close')}</button></form><h2 id="teacher-controls-title">교사 메뉴</h2><div class="teacher-controls-grid"><button id="class-toggle"></button><button id="class-fullscreen">${icon('fullscreen')}전체 화면</button><button id="class-finish">활동 종료</button><button id="teacher-dashboard">대시보드</button><button id="teacher-logout">로그아웃</button>${isDemo?'<button id="class-seed">예시 학생 입장</button>':''}</div></dialog>`,true,true);
     $('#class-toggle').onclick=e=>run(async()=>{current=await liveCall('state',{code:current.code,status:current.status==='open'?'closed':'open'});paint();},e.currentTarget);
     $('#class-finish').onclick=e=>run(async()=>{current=await liveCall('finish',{code:current.code});paint();stop();},e.currentTarget);
     $('#class-fullscreen').onclick=()=>run(async()=>{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();});
@@ -47,33 +54,33 @@ export async function startTeacher({app, homeUrl}) {
   }
   function paint(rebuild=false){
     if(!current||!$('#desk-grid'))return;
-    const answers=current.answers||[],capacity=size(),total=Math.max(current.expected,current.count),pages=Math.ceil(total/capacity);
+    const answers=current.answers||[],capacity=size(),total=Math.max(current.expected,current.count,...answers.map(a=>a.seat)),pages=Math.ceil(total/capacity);
     const newAnswers=answers.filter(a=>!seen.has(a.seat));
     if(newAnswers.length&&seen.size){const last=newAnswers.at(-1);const nextPage=Math.floor((last.seat-1)/capacity);if(nextPage!==page){page=nextPage;rebuild=true;}}
     page=Math.max(0,Math.min(page,pages-1));
     const start=page*capacity,end=Math.min(total,start+capacity),grid=$('#desk-grid');
-    if(rebuild||grid.dataset.range!==`${start}-${end}`){grid.innerHTML=Array.from({length:end-start},(_,i)=>`<div class="desk-slot" data-seat="${start+i+1}"><div class="empty-bubble">생각이 도착할 자리</div><div class="desk-top"></div><div class="desk-legs"></div><span class="desk-name">${start+i+1}</span></div>`).join('');grid.dataset.range=`${start}-${end}`;}
+    if(rebuild||grid.dataset.range!==`${start}-${end}`){grid.innerHTML=Array.from({length:end-start},(_,i)=>`<div class="desk-slot" data-seat="${start+i+1}"><div class="desk-top"></div><div class="desk-legs"></div><span class="desk-name" aria-hidden="true"></span></div>`).join('');grid.dataset.range=`${start}-${end}`;}
     for(const answer of answers){
       const slot=grid.querySelector(`[data-seat="${answer.seat}"]`);if(!slot||slot.dataset.filled)continue;
       const c=choices.find(c=>c.id===answer.choice),arrival=!seen.has(answer.seat);
       slot.dataset.filled='true';slot.classList.add('occupied',c.color);if(arrival)slot.classList.add('arriving');
-      slot.innerHTML=`<button class="opinion-bubble" aria-label="${esc(answer.name)}의 의견 전체 보기"><span class="opinion-choice">${c.icon} ${c.label}</span><span class="opinion-text">${esc(answer.reason)}</span></button><div class="pupil-seat">${pupil(answer.seat)}</div><div class="desk-top"></div><div class="desk-legs"></div><span class="desk-name">${esc(answer.name)}</span>`;
-      slot.querySelector('button').onclick=()=>{$('#desk-detail').innerHTML=`<h2 id="desk-dialog-title">${esc(answer.name)}의 생각</h2><p class="detail-choice ${c.color}">${c.icon} ${c.label}</p><p>${esc(answer.reason)}</p>`;$('#desk-dialog').showModal();};
+      slot.innerHTML=`<button class="opinion-bubble" aria-label="${esc(answer.name)} 학생의 생각 보기"><span class="opinion-choice">${icon(c.id)} ${c.label}</span><span class="opinion-text">${esc(answer.reason)}</span></button><div class="pupil-seat">${pupil(answer.seat)}</div><div class="desk-top"></div><div class="desk-legs"></div><span class="desk-name">${esc(answer.name)}</span>`;
+      slot.querySelector('button').onclick=()=>{$('#desk-detail').innerHTML=`<h2 id="desk-dialog-title">${esc(answer.name)} 학생의 생각</h2><p class="detail-choice ${c.color}">${icon(c.id)} ${c.label}</p><p>${esc(answer.reason)}</p>`;$('#desk-dialog').showModal();};
     }
     answers.forEach(a=>seen.add(a.seat));
     $('#class-count').textContent=current.count;$('#class-expected').textContent=` / ${current.expected}명`;
-    $('#class-state').textContent=current.status==='open'?'응답 받는 중 · 홈에서 바로 참여하세요':current.status==='closed'?'응답 마감 · 친구들의 생각을 함께 읽어요':'활동 종료 · 응답은 보관되어 있어요';
     $('#class-toggle').textContent=current.status==='open'?'응답 마감':'응답 다시 열기';$('#class-toggle').disabled=current.status==='ended';$('#class-finish').disabled=current.status==='ended';
     if(isDemo)$('#class-seed').disabled=current.status!=='open';
-    $('#desk-page').textContent=`${page+1} / ${pages}`;$('#desk-prev').disabled=page===0;$('#desk-next').disabled=page>=pages-1;
-    if(newAnswers.length)$('#class-hint').textContent=`${newAnswers.at(-1).name}의 생각이 도착했어요. 말풍선을 누르면 의견 전체를 볼 수 있어요.`;
+    $('#desk-page').textContent=`${page+1} / ${pages}`;$('#desk-pagination').hidden=pages<=1;$('#desk-prev').hidden=page===0;$('#desk-next').hidden=page>=pages-1;
   }
   async function refresh(){
     if(refreshing||!current)return;refreshing=true;
-    try{const code=current.code;const next=await liveCall('teacher_get',{code});if(!current||current.code!==code)return;current=next;paint();if($('#class-connection'))$('#class-connection').textContent='방금 연결됨';}
-    catch(error){if($('#class-connection'))$('#class-connection').textContent='연결 재시도 중';message(error.message);}
+    try{const code=current.code;const next=await liveCall('teacher_get',{code});if(!current||current.code!==code)return;current=next;paint();message('');}
+    catch(error){message(error.message);}
     finally{refreshing=false;}
   }
+  const unbindMenu=bindTeacherMenuKey(window,()=>$('#teacher-controls'),()=>Boolean($('#desk-dialog')?.open));
+  window.addEventListener('pagehide',unbindMenu,{once:true});
   window.addEventListener('resize',()=>paint(true));
   try{
     if(!await hasTeacherSession()){loginPage();return;}

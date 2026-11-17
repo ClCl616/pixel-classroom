@@ -37,6 +37,7 @@ declare
  own_answer jsonb;
  answers jsonb;
  total integer;
+ assigned_seat integer;
  student_name text;
  student_reason text;
  desired text;
@@ -91,13 +92,17 @@ begin
   else
    select count(*) into total from pixel_private.live_answers where room_id=r.id;
    if total>=100 then raise exception '활동의 최대 응답 수에 도달했습니다.'; end if;
-   insert into pixel_private.live_answers(room_id,user_id,name,choice,reason,seat) values(r.id,actor,student_name,payload->>'choice',student_reason,total+1);
+   select candidate into assigned_seat
+   from generate_series(1,greatest(r.expected,total+1)) as candidate
+   where not exists(select 1 from pixel_private.live_answers a where a.room_id=r.id and a.seat=candidate)
+   order by random() limit 1;
+   insert into pixel_private.live_answers(room_id,user_id,name,choice,reason,seat) values(r.id,actor,student_name,payload->>'choice',student_reason,assigned_seat);
   end if;
  end if;
  select count(*) into total from pixel_private.live_answers where room_id=r.id;
  select jsonb_build_object('name',name,'choice',choice,'reason',reason,'seat',seat) into own_answer from pixel_private.live_answers where room_id=r.id and user_id=actor;
  if action in ('teacher_get','start','state','finish') then
-  select coalesce(jsonb_agg(jsonb_build_object('name',name,'choice',choice,'reason',reason,'seat',seat) order by seat),'[]'::jsonb) into answers from pixel_private.live_answers where room_id=r.id;
+  select coalesce(jsonb_agg(jsonb_build_object('name',name,'choice',choice,'reason',reason,'seat',seat) order by created_at,seat),'[]'::jsonb) into answers from pixel_private.live_answers where room_id=r.id;
  end if;
  return jsonb_build_object('code',r.code,'expected',r.expected,'status',r.status,'count',total,'own',own_answer,'answers',answers);
 end;

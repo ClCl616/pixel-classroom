@@ -26,3 +26,26 @@ body.teacher-console{width:100%;max-width:none;height:100dvh;min-height:0;overfl
 .opinion-choice{line-height:14px}
 .opinion-text{line-height:16px;-webkit-line-clamp:2;max-height:32px}
 @media(max-width:899px){.opinion-text{-webkit-line-clamp:4;max-height:64px;line-height:16px}}
+
+/* Project only the classroom; teacher actions live in the P-key dialog. */
+.teacher-icon{display:inline-block;width:18px;height:18px;vertical-align:middle;flex-shrink:0}
+.teacher-brand{display:inline-flex;align-items:center;gap:9px}
+.teacher-brand .teacher-icon{width:24px;height:24px}
+.opinion-choice .teacher-icon{width:12px;height:12px;margin-right:3px}
+.detail-choice .teacher-icon{width:18px;height:18px;margin-right:6px}
+.desk-grid{margin-top:20px}
+.desk-name{min-height:18px}
+.classroom-bottom{justify-content:flex-end;gap:12px}
+.classroom-bottom[hidden],.classroom-bottom button[hidden]{display:none!important}
+.classroom-bottom button{display:grid;place-items:center;min-width:36px;min-height:32px}
+#teacher-message:empty{display:none}
+.teacher-controls-dialog{width:min(400px,calc(100vw - 32px));max-height:90dvh;overflow:auto;border:2px solid #173d37;padding:22px;background:#fffdf0;color:#173d37;box-shadow:7px 7px 0 #173d37}
+.teacher-controls-dialog::backdrop{background:#173d3788}
+.teacher-controls-dialog form{text-align:right}
+.teacher-controls-dialog form button{background:none;border:0;padding:6px;cursor:pointer;color:inherit}
+.teacher-controls-dialog h2{font-size:24px;margin:4px 0 20px}
+.teacher-controls-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.teacher-controls-grid button{font:inherit;font-size:13px;min-height:50px;padding:12px;border:1px solid #8fa28a;background:#f3f4e6;color:#173d37;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+.teacher-controls-grid button:first-child{background:#d4e7bd}
+.teacher-controls-grid button:disabled{opacity:.4;cursor:default}
+@media(max-width:899px){.desk-grid{margin-top:12px}.desk-name{min-height:16px}}
