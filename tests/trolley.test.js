@@ -52,7 +52,8 @@ test('live trolley requires a name, preserves a failed submission and confirms t
  const submitResponse=async payload=>{attempts++;sent=payload;if(attempts===1)throw new Error('연결이 끊겼어요. 다시 보내 주세요.');return {own:{...payload,seat:3}};};
  const context=vm.createContext({showPeerResponses,pupil,pixelIcon,choices,esc:escapeHtml,validateResponse,app,submitResponse,document:{body:{classList:{add(){}}}},window:{innerHeight:568,addEventListener(){}}});
  vm.runInContext(source,context);vm.runInContext("startTrolley({app,homeUrl:'/',liveSession:{code:'ROOM'},submitResponse});",context);
- assert.ok(app.innerHTML.includes('student-identify'));
+ assert.ok(app.innerHTML.includes('트롤리 딜레마란?'));assert.ok(app.innerHTML.includes('rail-scene approach'));assert.ok(!app.innerHTML.includes('id="student-identify"'));
+ node('#rail-identify').onclick();assert.ok(app.innerHTML.includes('student-identify'));
  node('#student-name').value=' ';node('#student-identify').onsubmit({preventDefault(){}});assert.ok(node('#name-error').textContent);
  node('#student-name').value='민서';node('#student-identify').onsubmit({preventDefault(){}});
  node('#rail-next').onclick();buttons[0].onclick();node('#rail-next').onclick();

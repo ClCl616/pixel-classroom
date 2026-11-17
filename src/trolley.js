@@ -40,8 +40,12 @@ export function startTrolley({app, homeUrl, liveSession=null, submitResponse=nul
   fit(); viewport?.addEventListener('resize',fit);
   window.addEventListener('pagehide',()=>{viewport?.removeEventListener('resize',fit);choice='';reason='';},{once:true});
   function show(content, stage) {
-    app.innerHTML=`<main class="rail-activity" aria-label="트롤리 딜레마"><div class="rail-progress" aria-label="${stage} / 5 단계">${[1,2,3,4,5].map(i=>`<i class="${i<=stage?'done':''}"></i>`).join('')}</div>${content}</main>`;
+    app.innerHTML=`<main class="rail-activity" aria-label="트롤리 딜레마"><div class="rail-progress" aria-label="${stage===0?'활동 소개':`${stage} / 5 단계`}">${[1,2,3,4,5].map(i=>`<i class="${i<=stage?'done':''}"></i>`).join('')}</div>${content}</main>`;
     app.querySelector('h1')?.focus({preventScroll:true});
+  }
+  function welcome() {
+    show(`${landscape('approach')}<section class="rail-story rail-welcome"><span class="rail-kicker">활동 소개</span><h1 tabindex="-1">트롤리 딜레마란?</h1><p>멈추지 않는 기차 앞에서<br>선로를 바꿀지 고민하는 사고 실험이에요.</p><p>어느 쪽을 골라도 누군가는 위험해져요.<br>나는 무엇을 중요하게 생각하는지<br>선택과 이유로 이야기해 봐요.</p></section><div class="rail-controls"><button class="btn primary full" id="rail-identify">이름 입력하기 →</button><a class="rail-home" href="${homeUrl}">활동 홈으로</a></div>`,0);
+    app.querySelector('#rail-identify').onclick=identify;
   }
   function identify() {
     show(`<section class="rail-story identify-story"><h1 tabindex="-1">이름을 알려주세요</h1></section><form id="student-identify" class="rail-writing"><label class="sr-only" for="student-name">이름</label><input id="student-name" aria-label="이름" name="name" maxlength="20" autocomplete="off" required value="${esc(name)}" placeholder="이름을 적어 주세요"><p id="name-error" class="form-error" role="alert"></p><button class="btn primary full" type="submit">활동 시작하기 →</button><a class="rail-home" href="${homeUrl}">활동 홈으로</a></form>`,1);
@@ -97,5 +101,5 @@ export function startTrolley({app, homeUrl, liveSession=null, submitResponse=nul
     show(`<section class="rail-story rail-finish"><div class="pixel-thought" aria-hidden="true">${choices.map(c=>pixelIcon(c.id)).join('')}</div><h1 tabindex="-1">선택 뒤에는<br>서로 다른 기준이 있어요.</h1><p>피해를 줄이는 것.<br>다른 사람에게 위험을 옮기지 않는 것.<br>충분한 근거를 갖추는 것.</p><p>선택이 다른 친구와<br>서로의 이유를 이야기해 보세요.</p></section><div class="rail-controls"><a class="btn primary full" href="${homeUrl}">활동 마치기</a>${submitted?'':'<button class="rail-home" id="rail-restart">다시 체험하기</button>'}</div>`,5);
     if(!submitted)app.querySelector('#rail-restart').onclick=()=>{choice='';reason='';intro();};
   }
-  if(submitted)reflect();else if(liveSession)identify();else intro();
+  if(submitted)reflect();else if(liveSession)welcome();else intro();
 }
