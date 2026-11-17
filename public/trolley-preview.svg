@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" fill="none" shape-rendering="crispEdges">
+  <defs>
+    <pattern id="grass" width="28" height="28" patternUnits="userSpaceOnUse"><path fill="#adc79b" d="M6 8h3v3H6zM20 22h3v3h-3z"/></pattern>
+    <g id="person"><path fill="#edbc96" d="M-3-14h6v6h-6z"/><path fill="#244e45" d="M-5-8H5V1H3v7H0V2H-1v6H-4V1H-5z"/></g>
+  </defs>
+  <path fill="#dce8c7" d="M0 0h400v120H0z"/>
+  <path fill="url(#grass)" d="M0 0h400v120H0z"/>
+  <path d="M0 60H158L238 30H400M158 60L238 96H400" stroke="#9eaa8e" stroke-width="20"/>
+  <path d="M0 60H158L238 30H400M158 60L238 96H400" stroke="#536d5b" stroke-width="17" stroke-dasharray="4 10"/>
+  <path d="M0 60H158L238 30H400M158 60L238 96H400" stroke="#f5f3dc" stroke-width="5"/>
+  <g transform="translate(100 58)">
+    <path fill="#173d37" d="M-31-21h62V5h-62zM-23 5h10v7h-10zM14 5h10v7H14zM-21-29H15v8h-36z"/>
+    <path fill="#df9169" d="M-28-18h56V2h-56zM-18-26H12v8h-30z"/>
+    <path fill="#fff4d7" d="M-22-13h10v9h-10zM-5-13H5v9H-5zM12-13h10v9H12z"/>
+    <path fill="#fff2b5" d="M31-12h6v7h-6z"/>
+  </g>
+  <g transform="translate(172 84)"><path fill="#244e45" d="M-10 6h20v5h-20zM-2-9h4V6h-4z"/><path fill="#df9169" d="M-5-15H5v7H-5z"/></g>
+  <use href="#person" x="315" y="21"/>
+  <use href="#person" x="265" y="87"/><use href="#person" x="290" y="87"/><use href="#person" x="315" y="87"/><use href="#person" x="340" y="87"/><use href="#person" x="365" y="87"/>
+</svg>
