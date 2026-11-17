@@ -63,7 +63,7 @@ export async function startTeacher({app, homeUrl}) {
       const slot=grid.querySelector(`[data-seat="${answer.seat}"]`);if(!slot||slot.dataset.filled)continue;
       const c=choices.find(c=>c.id===answer.choice),arrival=!seen.has(answer.seat);
       slot.dataset.filled='true';slot.classList.add('occupied',c.color);
-      slot.innerHTML=`<button class="opinion-bubble" aria-label="${esc(answer.name)} 학생의 생각 보기"><span class="opinion-choice">${icon(c.id)} ${c.label}</span><span class="opinion-text">${esc(answer.reason)}</span></button><div class="pupil-seat">${pupil(answer.seat)}</div><div class="desk-top"></div><div class="desk-legs"></div><span class="desk-name">${esc(answer.name)}</span>`;
+      slot.innerHTML=`<button class="opinion-bubble" aria-label="${esc(answer.name)} 학생의 생각 보기"><span class="opinion-choice">${icon(c.id)} ${c.label}</span><span class="opinion-body"><span class="opinion-text">${esc(answer.reason)}</span></span></button><div class="pupil-seat">${pupil(answer.seat)}</div><div class="desk-top"></div><div class="desk-legs"></div><span class="desk-name">${esc(answer.name)}</span>`;
       if(arrival)arrivals.push(enterClassroom(grid,slot,answer.seat));
       slot.querySelector('button').onclick=()=>{$('#desk-detail').innerHTML=`<h2 id="desk-dialog-title">${esc(answer.name)} 학생의 생각</h2><p class="detail-choice ${c.color}">${icon(c.id)} ${c.label}</p><p>${esc(answer.reason)}</p>`;$('#desk-dialog').showModal();};
     }
