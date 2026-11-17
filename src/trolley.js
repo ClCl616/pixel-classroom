@@ -1,3 +1,4 @@
+import {showPeerResponses} from './peer-responses.js';
 import {pupil, pixelIcon} from './pixel-art.js';
 import {choices, escapeHtml as esc, validateResponse} from './domain.js';
 import './trolley.css';
@@ -30,7 +31,7 @@ function landscape(mode) {
 }
 
 // Practice stays local. Live responses are submitted only after the student confirms.
-export function startTrolley({app, homeUrl, liveSession=null, submitResponse=null}) {
+export function startTrolley({app, homeUrl, liveSession=null, submitResponse=null, loadPeers=null}) {
   let choice=liveSession?.own?.choice||'', reason=liveSession?.own?.reason||'', name=liveSession?.own?.name||'', submitted=Boolean(liveSession?.own), sending=false;
   let seat=liveSession?.own?.seat;
   document.body.classList.add('trolley-immersed');
@@ -43,7 +44,7 @@ export function startTrolley({app, homeUrl, liveSession=null, submitResponse=nul
     app.querySelector('h1')?.focus({preventScroll:true});
   }
   function identify() {
-    show(`<section class="rail-story writing-story"><span class="rail-kicker">우리 반 트롤리 활동</span><h1 tabindex="-1">어떤 이름으로<br>자리에 앉을까요?</h1><p>이름과 선택, 의견이 선생님의 교실 화면에 함께 나타나요.</p></section><form id="student-identify" class="rail-writing"><label for="student-name">이름</label><input id="student-name" name="name" maxlength="20" autocomplete="off" required value="${esc(name)}" placeholder="이름을 적어 주세요"><p id="name-error" class="form-error" role="alert"></p><button class="btn primary full" type="submit">활동 시작하기 →</button><a class="rail-home" href="${homeUrl}">활동 홈으로</a></form>`,1);
+    show(`<section class="rail-story writing-story"><span class="rail-kicker">우리 반 트롤리 활동</span><h1 tabindex="-1">어떤 이름으로<br>자리에 앉을까요?</h1><p>이름과 선택, 의견이 선생님과 응답을 마친 같은 활동의 친구들에게 보여요.</p></section><form id="student-identify" class="rail-writing"><label for="student-name">이름</label><input id="student-name" name="name" maxlength="20" autocomplete="off" required value="${esc(name)}" placeholder="이름을 적어 주세요"><p id="name-error" class="form-error" role="alert"></p><button class="btn primary full" type="submit">활동 시작하기 →</button><a class="rail-home" href="${homeUrl}">활동 홈으로</a></form>`,1);
     app.querySelector('#student-identify').onsubmit=e=>{
       e.preventDefault();name=app.querySelector('#student-name').value.trim();
       if(!name||name.length>20||/[\u0000-\u001f\u007f]/.test(name)){app.querySelector('#name-error').textContent='이름을 줄바꿈 없이 1~20자로 적어 주세요.';return;}
@@ -83,8 +84,9 @@ export function startTrolley({app, homeUrl, liveSession=null, submitResponse=nul
   function reflect() {
     if(submitted){
       const selected=choices.find(c=>c.id===choice);
-      show(`<section class="rail-story student-result"><span class="rail-kicker">${esc(name)} · ${seat}번 자리에 앉았어요</span><div class="result-character" role="img" aria-label="교실에 앉은 나의 픽셀 캐릭터">${pupil(seat)}<div class="result-desk"></div></div><h1 tabindex="-1">${esc(name)} 학생의 생각</h1><div class="result-choice ${selected.color}">${pixelIcon(choice)}<strong>${selected.label}</strong></div><blockquote class="rail-answer">${esc(reason)}</blockquote></section><div class="rail-controls"><button class="btn primary full" id="rail-next">다른 관점 만나기 →</button><a class="rail-home" href="${homeUrl}">활동 홈으로</a></div>`,5);
+      show(`<section class="rail-story student-result"><span class="rail-kicker">${esc(name)} · ${seat}번 자리에 앉았어요</span><div class="result-character" role="img" aria-label="교실에 앉은 나의 픽셀 캐릭터">${pupil(seat)}<div class="result-desk"></div></div><h1 tabindex="-1">${esc(name)} 학생의 생각</h1><div class="result-choice ${selected.color}">${pixelIcon(choice)}<strong>${selected.label}</strong></div><blockquote class="rail-answer">${esc(reason)}</blockquote></section><div class="rail-controls"><button class="btn primary full" id="rail-peers">친구들의 응답보기</button><button class="rail-home" id="rail-next">다른 관점 만나기</button><a class="rail-home" href="${homeUrl}">활동 홈으로</a></div>`,5);
       app.querySelector('#rail-next').onclick=finish;
+      app.querySelector('#rail-peers').onclick=()=>showPeerResponses({app,loadPeers,ownSeat:seat,onBack:reflect});
       return;
     }
     show(`<section class="rail-story"><span class="rail-kicker">${submitted?`${esc(name)} · ${seat}번 자리에 앉았어요`:'나의 선택과 이유'}</span><h1 tabindex="-1">${choices.find(c=>c.id===choice).label}</h1><blockquote class="rail-answer">${esc(reason)}</blockquote><h2>한 걸음 더 생각해 보기</h2><p>${questions[choice]}</p></section><div class="rail-controls"><button class="btn primary full" id="rail-next">다른 관점 만나기 →</button>${submitted?'':'<button class="rail-home" id="rail-edit">이유 다시 쓰기</button>'}</div>`,5);

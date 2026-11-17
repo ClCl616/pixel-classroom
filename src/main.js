@@ -1,3 +1,4 @@
+import {robot} from './pixel-art.js';
 import './style.css';
 import {startStudentActivity} from './student-live.js';
 import {startTeacher} from './teacher.js';
@@ -10,7 +11,7 @@ const $ = s => document.querySelector(s);
 const params = new URLSearchParams(location.search);
 const teacher = params.get('view') === 'teacher';
 let room = null, rooms = [], authenticated = false, choice = '', reason = '', busy = false, timer, filter = 'all', connection = '연결 확인 중', lastSnapshot = '', creating = false;
-const robot = (size='') => `<svg class="robot ${size}" viewBox="0 0 24 27" role="img" aria-label="픽셀 AI 로봇 회로" shape-rendering="crispEdges"><path fill="#173d37" d="M11 0h2v4h7v2h2v13h-2v3h-3v3h-3v-3h-4v3H7v-3H4v-3H2V6h2V4h7z"/><path fill="#79d6a7" d="M4 6h16v13H4zM7 20h10v2H7z"/><path fill="#f5f1df" d="M6 8h12v8H6z"/><path fill="#173d37" d="M7 10h3v3H7zM14 10h3v3h-3zM10 15h4v1h-4z"/><path fill="#ee956c" d="M11 0h2v2h-2zM4 16h3v2H4zM17 16h3v2h-3z"/><path fill="#173d37" d="M0 10h2v7H0zM22 10h2v7h-2z"/></svg>`;
+
 function url(view, code, demo=isDemo) { const u=new URL(location.href);u.search='';if(view==='teacher')u.searchParams.set('view','teacher');if(code)u.searchParams.set('room',code);if(demo)u.searchParams.set('demo','1');return u.href; }
 function toast(message) { $('#toast').textContent=message;$('#toast').classList.add('show');clearTimeout(toast.timeout);toast.timeout=setTimeout(()=>$('#toast').classList.remove('show'),5000); }
 function header() { return `<header><a class="brand" href="${url('student')}">${robot()}<span>생각회로<small>PIXEL AI LAB</small></span></a><div class="header-right"><span class="mode">${isDemo?'연습 모드':teacher?'TEACHER CONSOLE':'STUDENT TERMINAL'}</span><a class="text-link" href="${url('student')}">${teacher?'학생 화면 ↗':'활동 홈 ↗'}</a></div></header>${isDemo?'<div class="demo-banner">둘러보기 · 이 브라우저 안에서만 작동하는 연습 수업입니다. 실제 학생 기기와 연결되지 않습니다.</div>':''}`; }

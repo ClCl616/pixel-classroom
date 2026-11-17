@@ -54,7 +54,7 @@ function demoCall(action, p) {
   return {...room,count:room.responses.length,own:own||null,responses:room.status === 'revealed' ? room.responses.map(({choice,reason})=>({choice,reason})) : null};
 }
 
-// Live classroom has a separate RPC: names and opinions are returned only to its teacher.
+// Named responses are available to the owner and submitted same-room participants.
 export async function liveCall(action, payload = {}) {
   if (demo) return liveDemo(action, payload);
   if (!client) throw new Error('수업 서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.');
@@ -97,7 +97,8 @@ function liveDemo(action,p) {
     current.answers.push({uid:crypto.randomUUID(),name,choice,reason,seat:randomDemoSeat(current)});persist();
   }
   const own=current.answers.find(a=>a.uid===uid);
-  return {...current,count:current.answers.length,own:own?{name:own.name,choice:own.choice,reason:own.reason,seat:own.seat}:null,answers:['teacher_get','start','state','finish','seed'].includes(action)?current.answers.map(({uid,...answer})=>answer):null};
+  if(action==='peers'&&!own)throw new Error('응답을 제출한 뒤 친구들의 생각을 볼 수 있어요.');
+  return {...current,count:current.answers.length,own:own?{name:own.name,choice:own.choice,reason:own.reason,seat:own.seat}:null,answers:['teacher_get','start','state','finish','seed','peers'].includes(action)?current.answers.map(({uid,...answer})=>answer):null};
 }
 
 function randomDemoSeat(room) {

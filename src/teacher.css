@@ -71,3 +71,4 @@ body.teacher-console{width:100%;max-width:none;height:100dvh;min-height:0;overfl
 .opinion-choice{font-size:10px;line-height:14px;margin-bottom:3px}
 .opinion-text{font-size:11px;line-height:14px;max-height:28px;-webkit-line-clamp:2}
 @media(max-width:899px){.opinion-choice{font-size:9px}.opinion-bubble{padding:5px;height:78px}.opinion-text{max-height:42px;-webkit-line-clamp:3}}
+.teacher-brand .robot{width:32px;height:36px;display:block;flex-shrink:0}

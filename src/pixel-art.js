@@ -7,3 +7,5 @@ export function pixelIcon(name) {
  const paths={classroom:'M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18',fullscreen:'M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6',close:'m6 6 12 12M6 18 18 6',previous:'m14 5-7 7 7 7M7 12h14',next:'m10 5 7 7-7 7M3 12h14',switch:'M5 19 19 5M8 5h11v11',stay:'M12 20V4m-7 7 7-7 7 7',hold:'M4 12h3m4 0h3m4 0h3'};
  return `<svg class="pixel-icon teacher-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none"><path d="${paths[name]||paths.next}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"/></svg>`;
 }
+
+export const robot = (size='') => `<svg class="robot ${size}" viewBox="0 0 24 27" role="img" aria-label="픽셀 AI 로봇 회로" shape-rendering="crispEdges"><path fill="#173d37" d="M11 0h2v4h7v2h2v13h-2v3h-3v3h-3v-3h-4v3H7v-3H4v-3H2V6h2V4h7z"/><path fill="#79d6a7" d="M4 6h16v13H4zM7 20h10v2H7z"/><path fill="#f5f1df" d="M6 8h12v8H6z"/><path fill="#173d37" d="M7 10h3v3H7zM14 10h3v3h-3zM10 15h4v1h-4z"/><path fill="#ee956c" d="M11 0h2v2h-2zM4 16h3v2H4zM17 16h3v2h-3z"/><path fill="#173d37" d="M0 10h2v7H0zM22 10h2v7h-2z"/></svg>`;

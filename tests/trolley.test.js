@@ -47,9 +47,10 @@ test('live trolley requires a name, preserves a failed submission and confirms t
  const nodes=new Map();const node=s=>{if(!nodes.has(s))nodes.set(s,{value:'',textContent:'',disabled:false,focus(){}});return nodes.get(s);};
  const buttons=choices.map(c=>({dataset:{choice:c.id}}));
  const app={innerHTML:'',style:{setProperty(){}},querySelector:node,querySelectorAll:()=>buttons};
- let attempts=0,sent;
+ let attempts=0,sent,peerView;
+ const showPeerResponses=options=>peerView=options;
  const submitResponse=async payload=>{attempts++;sent=payload;if(attempts===1)throw new Error('연결이 끊겼어요. 다시 보내 주세요.');return {own:{...payload,seat:3}};};
- const context=vm.createContext({pupil,pixelIcon,choices,esc:escapeHtml,validateResponse,app,submitResponse,document:{body:{classList:{add(){}}}},window:{innerHeight:568,addEventListener(){}}});
+ const context=vm.createContext({showPeerResponses,pupil,pixelIcon,choices,esc:escapeHtml,validateResponse,app,submitResponse,document:{body:{classList:{add(){}}}},window:{innerHeight:568,addEventListener(){}}});
  vm.runInContext(source,context);vm.runInContext("startTrolley({app,homeUrl:'/',liveSession:{code:'ROOM'},submitResponse});",context);
  assert.ok(app.innerHTML.includes('student-identify'));
  node('#student-name').value=' ';node('#student-identify').onsubmit({preventDefault(){}});assert.ok(node('#name-error').textContent);
@@ -60,5 +61,6 @@ test('live trolley requires a name, preserves a failed submission and confirms t
  assert.equal(attempts,1);assert.ok(app.innerHTML.includes('trolley-response'));assert.ok(node('#trolley-error').textContent.includes('연결'));assert.equal(node('#trolley-response button[type="submit"]').disabled,false);
  await node('#trolley-response').onsubmit({preventDefault(){}});
  assert.equal(attempts,2);assert.equal(sent.name,'민서');assert.equal(sent.choice,'switch');assert.equal(sent.reason,'생명을 보호하고 싶어요.');assert.ok(app.innerHTML.includes('3번 자리에 앉았어요'));assert.ok(!app.innerHTML.includes('id="rail-edit"'));assert.ok(app.innerHTML.includes(pupil(3)));assert.ok(app.innerHTML.includes('민서 학생의 생각'));assert.ok(app.innerHTML.includes(sent.reason));
+ node('#rail-peers').onclick();assert.equal(peerView.ownSeat,3);peerView.onBack();assert.ok(app.innerHTML.includes('친구들의 응답보기'));
  node('#rail-next').onclick();assert.ok(!app.innerHTML.includes('id="rail-restart"'));
 });

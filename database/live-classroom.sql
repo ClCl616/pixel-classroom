@@ -43,7 +43,7 @@ declare
  desired text;
 begin
  if actor is null then raise exception '먼저 로그인하거나 활동에 접속해 주세요.'; end if;
- if action is null or action not in ('teacher_session','start','active','get','teacher_get','submit','state','finish') then raise exception '지원하지 않는 요청입니다.'; end if;
+ if action is null or action not in ('teacher_session','start','active','get','peers','teacher_get','submit','state','finish') then raise exception '지원하지 않는 요청입니다.'; end if;
  if action in ('teacher_session','start','teacher_get','state','finish') and not exists(select 1 from pixel_private.teachers where user_id=actor) then raise exception '수업 운영용 교사 계정이 아닙니다.'; end if;
  if action='teacher_session' then
   select lr.* into r from pixel_private.live_rooms lr join pixel_private.live_activity a on a.room_id=lr.id where a.activity='trolley' and lr.owner_id=actor;
@@ -101,7 +101,8 @@ begin
  end if;
  select count(*) into total from pixel_private.live_answers where room_id=r.id;
  select jsonb_build_object('name',name,'choice',choice,'reason',reason,'seat',seat) into own_answer from pixel_private.live_answers where room_id=r.id and user_id=actor;
- if action in ('teacher_get','start','state','finish') then
+ if action='peers' and own_answer is null then raise exception '응답을 제출한 뒤 친구들의 생각을 볼 수 있어요.'; end if;
+ if action in ('teacher_get','start','state','finish','peers') then
   select coalesce(jsonb_agg(jsonb_build_object('name',name,'choice',choice,'reason',reason,'seat',seat) order by created_at,seat),'[]'::jsonb) into answers from pixel_private.live_answers where room_id=r.id;
  end if;
  return jsonb_build_object('code',r.code,'expected',r.expected,'status',r.status,'count',total,'own',own_answer,'answers',answers);

@@ -1,4 +1,4 @@
-import {pupil, pixelIcon as icon} from './pixel-art.js';
+import {robot, pupil, pixelIcon as icon} from './pixel-art.js';
 import {enterClassroom} from './classroom-arrival.js';
 import {liveCall, login, logout, hasTeacherSession, configured, isDemo} from './api.js';
 import {choices, escapeHtml as esc} from './domain.js';
@@ -17,7 +17,7 @@ export async function startTeacher({app, homeUrl}) {
   const demoLabel=isDemo?'<span class="teacher-demo">연습 모드 · 이 브라우저에서만 연결</span>':'';
   const message=text=>{const el=$('#teacher-message');if(el)el.textContent=text;};
   function shell(content,back=false,board=false){
-    stop();app.innerHTML=`<div class="teacher-app"><div class="teacher-top"><a href="${homeUrl}" class="teacher-brand">${icon('classroom')}<span>픽셀 클래스룸</span></a>${demoLabel}${board?'':`<div>${back?'<button id="teacher-dashboard">대시보드</button>':''}<button id="teacher-logout">로그아웃</button></div>`}</div>${content}<p id="teacher-message" role="status"></p></div>`;
+    stop();app.innerHTML=`<div class="teacher-app"><div class="teacher-top"><a href="${homeUrl}" class="teacher-brand">${robot()}<span>픽셀 클래스룸</span></a>${demoLabel}${board?'':`<div>${back?'<button id="teacher-dashboard">대시보드</button>':''}<button id="teacher-logout">로그아웃</button></div>`}</div>${content}<p id="teacher-message" role="status"></p></div>`;
     $('#teacher-logout').onclick=()=>run(async()=>{await logout();stop();location.href=homeUrl;});
     if(back)$('#teacher-dashboard').onclick=()=>run(dashboard);
   }
