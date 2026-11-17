@@ -44,7 +44,7 @@ export function startTrolley({app, homeUrl, liveSession=null, submitResponse=nul
     app.querySelector('h1')?.focus({preventScroll:true});
   }
   function welcome() {
-    show(`${landscape('approach')}<section class="rail-story rail-welcome"><span class="rail-kicker">활동 소개</span><h1 tabindex="-1">트롤리 딜레마란?</h1><p>멈추지 않는 기차 앞에서<br>선로를 바꿀지 고민하는 사고 실험이에요.</p><p>어느 쪽을 골라도 누군가는 위험해져요.<br>나는 무엇을 중요하게 생각하는지<br>선택과 이유로 이야기해 봐요.</p></section><div class="rail-controls"><button class="btn primary full" id="rail-identify">이름 입력하기 →</button><a class="btn quiet full" href="${homeUrl}">종료하기</a></div>`,0);
+    show(`${landscape('approach')}<section class="rail-story rail-welcome"><span class="rail-kicker">활동 소개</span><h1 tabindex="-1">트롤리 딜레마란?</h1><p>멈추지 않는 기차 앞에서<br>선로를 바꿀지 고민하는 사고 실험이에요.</p><p>어느 쪽을 골라도 누군가는 위험해져요.<br>나는 무엇을 중요하게 생각하는지<br>선택과 이유로 이야기해 봐요.</p></section><div class="rail-controls"><button class="btn primary full" id="rail-identify">시작하기 →</button><a class="btn quiet full" href="${homeUrl}">종료하기</a></div>`,0);
     app.querySelector('#rail-identify').onclick=identify;
   }
   function identify() {
