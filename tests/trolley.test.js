@@ -1,3 +1,4 @@
+import {pupil,pixelIcon} from '../src/pixel-art.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -12,7 +13,7 @@ test('standalone trolley supports all choices, validation, editing and a fresh r
   const buttons=choices.map(c=>({dataset:{choice:c.id}}));
   const app={innerHTML:'',style:{setProperty(){}},querySelector:node,querySelectorAll:()=>buttons};
   const deny=()=>{throw new Error('Personal response must stay in page memory');};
-  const context=vm.createContext({choices,esc:escapeHtml,validateResponse,app,document:{body:{classList:{add(){}}}},window:{innerHeight:568,addEventListener(){}},fetch:deny,localStorage:new Proxy({},{get:deny}),sessionStorage:new Proxy({},{get:deny})});
+  const context=vm.createContext({pupil,pixelIcon,choices,esc:escapeHtml,validateResponse,app,document:{body:{classList:{add(){}}}},window:{innerHeight:568,addEventListener(){}},fetch:deny,localStorage:new Proxy({},{get:deny}),sessionStorage:new Proxy({},{get:deny})});
   vm.runInContext(source,context);
   vm.runInContext("startTrolley({app,homeUrl:'/'});",context);
   assert.ok(app.innerHTML.includes('기차가 멈추지 않아요.'));
@@ -48,7 +49,7 @@ test('live trolley requires a name, preserves a failed submission and confirms t
  const app={innerHTML:'',style:{setProperty(){}},querySelector:node,querySelectorAll:()=>buttons};
  let attempts=0,sent;
  const submitResponse=async payload=>{attempts++;sent=payload;if(attempts===1)throw new Error('연결이 끊겼어요. 다시 보내 주세요.');return {own:{...payload,seat:3}};};
- const context=vm.createContext({choices,esc:escapeHtml,validateResponse,app,submitResponse,document:{body:{classList:{add(){}}}},window:{innerHeight:568,addEventListener(){}}});
+ const context=vm.createContext({pupil,pixelIcon,choices,esc:escapeHtml,validateResponse,app,submitResponse,document:{body:{classList:{add(){}}}},window:{innerHeight:568,addEventListener(){}}});
  vm.runInContext(source,context);vm.runInContext("startTrolley({app,homeUrl:'/',liveSession:{code:'ROOM'},submitResponse});",context);
  assert.ok(app.innerHTML.includes('student-identify'));
  node('#student-name').value=' ';node('#student-identify').onsubmit({preventDefault(){}});assert.ok(node('#name-error').textContent);
@@ -58,6 +59,6 @@ test('live trolley requires a name, preserves a failed submission and confirms t
  await node('#trolley-response').onsubmit({preventDefault(){}});
  assert.equal(attempts,1);assert.ok(app.innerHTML.includes('trolley-response'));assert.ok(node('#trolley-error').textContent.includes('연결'));assert.equal(node('#trolley-response button[type="submit"]').disabled,false);
  await node('#trolley-response').onsubmit({preventDefault(){}});
- assert.equal(attempts,2);assert.equal(sent.name,'민서');assert.equal(sent.choice,'switch');assert.equal(sent.reason,'생명을 보호하고 싶어요.');assert.ok(app.innerHTML.includes('3번 자리에 앉았어요'));assert.ok(!app.innerHTML.includes('id="rail-edit"'));
+ assert.equal(attempts,2);assert.equal(sent.name,'민서');assert.equal(sent.choice,'switch');assert.equal(sent.reason,'생명을 보호하고 싶어요.');assert.ok(app.innerHTML.includes('3번 자리에 앉았어요'));assert.ok(!app.innerHTML.includes('id="rail-edit"'));assert.ok(app.innerHTML.includes(pupil(3)));assert.ok(app.innerHTML.includes('민서 학생의 생각'));assert.ok(app.innerHTML.includes(sent.reason));
  node('#rail-next').onclick();assert.ok(!app.innerHTML.includes('id="rail-restart"'));
 });

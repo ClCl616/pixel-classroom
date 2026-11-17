@@ -1,3 +1,4 @@
+import {pupil, pixelIcon} from './pixel-art.js';
 import {choices, escapeHtml as esc, validateResponse} from './domain.js';
 import './trolley.css';
 
@@ -54,7 +55,7 @@ export function startTrolley({app, homeUrl, liveSession=null, submitResponse=nul
     app.querySelector('#rail-next').onclick=decide;
   }
   function decide() {
-    show(`${landscape('waiting')}<section class="rail-story"><h1 tabindex="-1">레버를 움직일까요?</h1><p>멈추거나 다른 길로 피할 수 없어요.<br>나라면 어떤 선택을 할까요?</p></section><div class="rail-options">${choices.map(c=>`<button class="rail-option ${c.color}" data-choice="${c.id}"><span>${c.icon}</span>${c.label}</button>`).join('')}</div>`,2);
+    show(`${landscape('waiting')}<section class="rail-story"><h1 tabindex="-1">레버를 움직일까요?</h1><p>멈추거나 다른 길로 피할 수 없어요.<br>나라면 어떤 선택을 할까요?</p></section><div class="rail-options">${choices.map(c=>`<button class="rail-option ${c.color}" data-choice="${c.id}"><span>${pixelIcon(c.id)}</span>${c.label}</button>`).join('')}</div>`,2);
     app.querySelectorAll('[data-choice]').forEach(button=>button.onclick=()=>{choice=button.dataset.choice;outcome();});
   }
   function outcome() {
@@ -80,12 +81,18 @@ export function startTrolley({app, homeUrl, liveSession=null, submitResponse=nul
     app.querySelector('#rail-back').onclick=decide;
   }
   function reflect() {
+    if(submitted){
+      const selected=choices.find(c=>c.id===choice);
+      show(`<section class="rail-story student-result"><span class="rail-kicker">${esc(name)} · ${seat}번 자리에 앉았어요</span><div class="result-character" role="img" aria-label="교실에 앉은 나의 픽셀 캐릭터">${pupil(seat)}<div class="result-desk"></div></div><h1 tabindex="-1">${esc(name)} 학생의 생각</h1><div class="result-choice ${selected.color}">${pixelIcon(choice)}<strong>${selected.label}</strong></div><blockquote class="rail-answer">${esc(reason)}</blockquote></section><div class="rail-controls"><button class="btn primary full" id="rail-next">다른 관점 만나기 →</button><a class="rail-home" href="${homeUrl}">활동 홈으로</a></div>`,5);
+      app.querySelector('#rail-next').onclick=finish;
+      return;
+    }
     show(`<section class="rail-story"><span class="rail-kicker">${submitted?`${esc(name)} · ${seat}번 자리에 앉았어요`:'나의 선택과 이유'}</span><h1 tabindex="-1">${choices.find(c=>c.id===choice).label}</h1><blockquote class="rail-answer">${esc(reason)}</blockquote><h2>한 걸음 더 생각해 보기</h2><p>${questions[choice]}</p></section><div class="rail-controls"><button class="btn primary full" id="rail-next">다른 관점 만나기 →</button>${submitted?'':'<button class="rail-home" id="rail-edit">이유 다시 쓰기</button>'}</div>`,5);
     if(!submitted)app.querySelector('#rail-edit').onclick=write;
     app.querySelector('#rail-next').onclick=finish;
   }
   function finish() {
-    show(`<section class="rail-story rail-finish"><div class="pixel-thought" aria-hidden="true">↗ ↑ …</div><h1 tabindex="-1">선택 뒤에는<br>서로 다른 기준이 있어요.</h1><p>피해를 줄이는 것.<br>다른 사람에게 위험을 옮기지 않는 것.<br>충분한 근거를 갖추는 것.</p><p>선택이 다른 친구와<br>서로의 이유를 이야기해 보세요.</p></section><div class="rail-controls"><a class="btn primary full" href="${homeUrl}">활동 마치기</a>${submitted?'':'<button class="rail-home" id="rail-restart">다시 체험하기</button>'}</div>`,5);
+    show(`<section class="rail-story rail-finish"><div class="pixel-thought" aria-hidden="true">${choices.map(c=>pixelIcon(c.id)).join('')}</div><h1 tabindex="-1">선택 뒤에는<br>서로 다른 기준이 있어요.</h1><p>피해를 줄이는 것.<br>다른 사람에게 위험을 옮기지 않는 것.<br>충분한 근거를 갖추는 것.</p><p>선택이 다른 친구와<br>서로의 이유를 이야기해 보세요.</p></section><div class="rail-controls"><a class="btn primary full" href="${homeUrl}">활동 마치기</a>${submitted?'':'<button class="rail-home" id="rail-restart">다시 체험하기</button>'}</div>`,5);
     if(!submitted)app.querySelector('#rail-restart').onclick=()=>{choice='';reason='';intro();};
   }
   if(submitted)reflect();else if(liveSession)identify();else intro();

@@ -1,19 +1,18 @@
+import {pupil, pixelIcon as icon} from './pixel-art.js';
+import {enterClassroom} from './classroom-arrival.js';
 import {liveCall, login, logout, hasTeacherSession, configured, isDemo} from './api.js';
 import {choices, escapeHtml as esc} from './domain.js';
 import './teacher.css';
 import {bindTeacherMenuKey} from './teacher-menu-key.js';
 
-const icon = name => {
-  const paths={classroom:'<path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18"/>',fullscreen:'<path d="M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6"/>',close:'<path d="m6 6 12 12M6 18 18 6"/>',previous:'<path d="m14 5-7 7 7 7M7 12h14"/>',next:'<path d="m10 5 7 7-7 7M3 12h14"/>',switch:'<path d="M5 19 19 5M8 5h11v11"/>',stay:'<path d="M12 20V4m-7 7 7-7 7 7"/>',hold:'<path d="M5 12h2m4 0h2m4 0h2"/>'};
-  return `<svg class="teacher-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">${paths[name]}</svg>`;
-};
-const pupil = seat => `<svg class="pupil" viewBox="0 0 32 40" aria-hidden="true" shape-rendering="crispEdges"><path fill="#173d37" d="M8 2h16v4h4v15H4V6h4z"/><path fill="#edbc96" d="M8 8h16v14H8z"/><path fill="#173d37" d="M10 12h3v3h-3zM19 12h3v3h-3zM13 19h6v2h-6z"/><path fill="${['#88b9a1','#e4a47f','#b2a0ce'][seat%3]}" d="M6 23h20v12H6z"/><path fill="#173d37" d="M10 35h5v5h-5zM18 35h5v5h-5z"/></svg>`;
 export async function startTeacher({app, homeUrl}) {
   document.body.classList.add('teacher-console');
   let current=null, poll=null, busy=false, refreshing=false, page=0, seen=new Set(), active=null;
   const $=selector=>app.querySelector(selector);
   const size=()=>window.innerWidth>=900?15:6;
-  const stop=()=>{clearInterval(poll);poll=null;};
+  let arrivals=[];
+  const clearArrivals=()=>{arrivals.forEach(cancel=>cancel());arrivals=[];};
+  const stop=()=>{clearInterval(poll);poll=null;clearArrivals();};
   window.addEventListener('pagehide',stop,{once:true});
   const demoLabel=isDemo?'<span class="teacher-demo">연습 모드 · 이 브라우저에서만 연결</span>':'';
   const message=text=>{const el=$('#teacher-message');if(el)el.textContent=text;};
@@ -24,18 +23,18 @@ export async function startTeacher({app, homeUrl}) {
   }
   async function run(fn,button){if(busy)return;busy=true;if(button)button.disabled=true;message('');try{await fn();}catch(error){message(error.message||'연결을 확인하고 다시 시도해 주세요.');}finally{busy=false;if(button?.isConnected)button.disabled=false;if(current?.status==='ended')paint();}}
   function loginPage(error='') {
-    stop();app.innerHTML=`<div class="teacher-login"><a class="text-link" href="${homeUrl}">← 활동 홈</a><span class="teacher-eyebrow">PIXEL CLASSROOM</span><h1>교사 로그인</h1><p>교실의 생각을 한자리에 모아요.</p><form id="teacher-login"><label for="teacher-email">이메일</label><input id="teacher-email" type="email" autocomplete="username" required><label for="teacher-password">비밀번호</label><input id="teacher-password" type="password" autocomplete="current-password" required><button class="btn primary full" ${!configured&&!isDemo?'disabled':''}>로그인</button></form><p id="teacher-message" role="status">${esc(error||(!configured&&!isDemo?'수업 서버 연결을 확인해 주세요.':''))}</p></div>`;
+    stop();app.innerHTML=`<div class="teacher-login"><a class="text-link" href="${homeUrl}">${icon('previous')} 활동 홈</a><span class="teacher-eyebrow">PIXEL CLASSROOM</span><h1>교사 로그인</h1><p>교실의 생각을 한자리에 모아요.</p><form id="teacher-login"><label for="teacher-email">이메일</label><input id="teacher-email" type="email" autocomplete="username" required><label for="teacher-password">비밀번호</label><input id="teacher-password" type="password" autocomplete="current-password" required><button class="btn primary full" ${!configured&&!isDemo?'disabled':''}>로그인</button></form><p id="teacher-message" role="status">${esc(error||(!configured&&!isDemo?'수업 서버 연결을 확인해 주세요.':''))}</p></div>`;
     $('#teacher-login').onsubmit=e=>{e.preventDefault();run(async()=>{await login($('#teacher-email').value,$('#teacher-password').value);try{await dashboard();}catch(error){await logout();throw error;}},e.submitter);};
   }
   async function dashboard(){
     const session=await liveCall('teacher_session');active=session.active;current=null;
     const u=new URL(location.href);u.searchParams.delete('room');u.searchParams.delete('activity');history.replaceState(null,'',u);
-    shell(`<section class="teacher-dashboard"><span class="teacher-eyebrow">TEACHER DASHBOARD</span><h1>오늘의 교실</h1><p>활동을 선택하고 학생들의 생각을 만나세요.</p><div class="teacher-summary"><span>진행 중인 활동</span><strong>${active?'트롤리 딜레마':'아직 없어요'}</strong>${active?'<button class="btn primary" id="resume-class">교실 이어보기 →</button>':''}</div><button class="btn primary" id="choose-activity">활동 선택 →</button></section>`);
+    shell(`<section class="teacher-dashboard"><span class="teacher-eyebrow">TEACHER DASHBOARD</span><h1>오늘의 교실</h1><p>활동을 선택하고 학생들의 생각을 만나세요.</p><div class="teacher-summary"><span>진행 중인 활동</span><strong>${active?'트롤리 딜레마':'아직 없어요'}</strong>${active?`<button class="btn primary" id="resume-class">교실 이어보기 ${icon('next')}</button>`:''}</div><button class="btn primary" id="choose-activity">활동 선택 ${icon('next')}</button></section>`);
     $('#choose-activity').onclick=activityPicker;
     if(active)$('#resume-class').onclick=e=>run(()=>openBoard(active.code),e.currentTarget);
   }
   function activityPicker(){
-    shell(`<section class="teacher-dashboard"><span class="teacher-eyebrow">활동 선택</span><h1>어떤 생각을 모을까요?</h1><div class="teacher-activities"><article><img src="${import.meta.env.BASE_URL}trolley-preview.svg" alt="기차와 갈림길"><h2>트롤리 딜레마</h2><p>이름·선택·의견이 책상과 말풍선으로 도착해요.</p><label for="class-size">책상 수</label><select id="class-size">${[15,20,25,30].map(n=>`<option value="${n}">${n}석</option>`).join('')}</select><button class="btn primary full" id="start-class">${active?'진행 중인 교실 열기':'교실 열기'} →</button></article><article class="teacher-cyber"><div class="teacher-chat-art" aria-hidden="true">···</div><h2>사이버폭력 예방</h2><p>학생이 혼자 선택하고 돌아보는 활동이에요. 개인 결과를 수집하지 않아요.</p><a class="btn quiet full" href="${import.meta.env.BASE_URL}cyber/">활동 화면 열기 ↗</a></article></div></section>`,true);
+    shell(`<section class="teacher-dashboard"><span class="teacher-eyebrow">활동 선택</span><h1>어떤 생각을 모을까요?</h1><div class="teacher-activities"><article><img src="${import.meta.env.BASE_URL}trolley-preview.svg" alt="기차와 갈림길"><h2>트롤리 딜레마</h2><p>이름·선택·의견이 책상과 말풍선으로 도착해요.</p><label for="class-size">책상 수</label><select id="class-size">${[15,20,25,30].map(n=>`<option value="${n}">${n}석</option>`).join('')}</select><button class="btn primary full" id="start-class">${active?'진행 중인 교실 열기':'교실 열기'} ${icon('next')}</button></article><article class="teacher-cyber"><div class="teacher-chat-art" aria-hidden="true">···</div><h2>사이버폭력 예방</h2><p>학생이 혼자 선택하고 돌아보는 활동이에요. 개인 결과를 수집하지 않아요.</p><a class="btn quiet full" href="${import.meta.env.BASE_URL}cyber/">활동 화면 열기 ${icon('switch')}</a></article></div></section>`,true);
     $('#start-class').onclick=e=>run(async()=>{const room=await liveCall('start',{expected:Number($('#class-size').value)});await openBoard(room.code);},e.currentTarget);
   }
   async function openBoard(code){
@@ -56,15 +55,16 @@ export async function startTeacher({app, homeUrl}) {
     if(!current||!$('#desk-grid'))return;
     const answers=current.answers||[],capacity=size(),total=Math.max(current.expected,current.count,...answers.map(a=>a.seat)),pages=Math.ceil(total/capacity);
     const newAnswers=answers.filter(a=>!seen.has(a.seat));
-    if(newAnswers.length&&seen.size){const last=newAnswers.at(-1);const nextPage=Math.floor((last.seat-1)/capacity);if(nextPage!==page){page=nextPage;rebuild=true;}}
+    if(newAnswers.length){const last=newAnswers.at(-1);const nextPage=Math.floor((last.seat-1)/capacity);if(nextPage!==page){page=nextPage;rebuild=true;}}
     page=Math.max(0,Math.min(page,pages-1));
     const start=page*capacity,end=Math.min(total,start+capacity),grid=$('#desk-grid');
-    if(rebuild||grid.dataset.range!==`${start}-${end}`){grid.innerHTML=Array.from({length:end-start},(_,i)=>`<div class="desk-slot" data-seat="${start+i+1}"><div class="desk-top"></div><div class="desk-legs"></div><span class="desk-name" aria-hidden="true"></span></div>`).join('');grid.dataset.range=`${start}-${end}`;}
+    if(rebuild||grid.dataset.range!==`${start}-${end}`){clearArrivals();grid.innerHTML=Array.from({length:end-start},(_,i)=>`<div class="desk-slot" data-seat="${start+i+1}"><div class="desk-top"></div><div class="desk-legs"></div><span class="desk-name" aria-hidden="true"></span></div>`).join('');grid.dataset.range=`${start}-${end}`;}
     for(const answer of answers){
       const slot=grid.querySelector(`[data-seat="${answer.seat}"]`);if(!slot||slot.dataset.filled)continue;
       const c=choices.find(c=>c.id===answer.choice),arrival=!seen.has(answer.seat);
-      slot.dataset.filled='true';slot.classList.add('occupied',c.color);if(arrival)slot.classList.add('arriving');
+      slot.dataset.filled='true';slot.classList.add('occupied',c.color);
       slot.innerHTML=`<button class="opinion-bubble" aria-label="${esc(answer.name)} 학생의 생각 보기"><span class="opinion-choice">${icon(c.id)} ${c.label}</span><span class="opinion-text">${esc(answer.reason)}</span></button><div class="pupil-seat">${pupil(answer.seat)}</div><div class="desk-top"></div><div class="desk-legs"></div><span class="desk-name">${esc(answer.name)}</span>`;
+      if(arrival)arrivals.push(enterClassroom(grid,slot,answer.seat));
       slot.querySelector('button').onclick=()=>{$('#desk-detail').innerHTML=`<h2 id="desk-dialog-title">${esc(answer.name)} 학생의 생각</h2><p class="detail-choice ${c.color}">${icon(c.id)} ${c.label}</p><p>${esc(answer.reason)}</p>`;$('#desk-dialog').showModal();};
     }
     answers.forEach(a=>seen.add(a.seat));
