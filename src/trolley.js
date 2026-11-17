@@ -15,18 +15,18 @@ const outcomes = {
 };
 function landscape(mode) {
   const person=(x,y)=>`<g transform="translate(${x} ${y})"><path fill="#f2c4a5" d="M-4-18h8v8h-8z"/><path fill="#244e45" d="M-6-10H6V2H3v9H0V3H-1v8H-4V2H-6z"/></g>`;
-  return `<div class="rail-scene ${mode}" role="img" aria-label="갈라지는 선로: 위쪽에 한 명, 아래쪽에 다섯 명. ${mode==='switch'?'기차가 위쪽 선로로 이동합니다.':mode==='stay'?'기차가 아래쪽 선로로 이동합니다.':mode==='hold'?'판단을 유보한 장면입니다.':'기차가 갈림길에 다가옵니다.'}">
+  return `<div class="rail-scene ${mode}" role="img" aria-label="갈라지는 선로: 위쪽에 한 명, 직진하는 기본 선로에 다섯 명. ${mode==='switch'?'기차가 위쪽 선로로 이동합니다.':mode==='stay'?'기차가 기본 선로를 따라 직진합니다.':mode==='hold'?'판단을 유보한 장면입니다.':'기차가 갈림길에 다가옵니다.'}">
   <svg viewBox="0 0 400 280" shape-rendering="crispEdges" aria-hidden="true">
     <defs><pattern id="grass" width="36" height="36" patternUnits="userSpaceOnUse"><path d="M4 9h4v4H4zM26 26h4v4h-4z" fill="#a8c49a"/></pattern></defs>
     <path fill="#dce8c7" d="M0 0h400v280H0z"/><path fill="url(#grass)" d="M0 0h400v280H0z"/>
     <path fill="#b6cca7" d="M0 0h400v35H0z"/><path fill="#819e79" d="M20 8h20v22H20zM340 2h28v30h-28z"/>
-    <path class="rail-bed" d="M-30 146H135L260 83H420M135 146L260 215H420"/>
-    <path class="rail-ties" d="M-30 146H135L260 83H420M135 146L260 215H420"/>
-    <path class="rail-line" d="M-30 146H135L260 83H420M135 146L260 215H420"/>
-    <path class="route route-switch" d="M135 146L260 83H400"/><path class="route route-stay" d="M135 146L260 215H400"/>
-    <g class="rail-people">${person(321,70)}${[270,294,318,342,366].map(x=>person(x,202)).join('')}</g>
-    <g class="rail-lever" transform="translate(141 175)"><path fill="#244e45" d="M-12 9h24v7h-24z"/><path d="M0 9V-12" stroke="#244e45" stroke-width="5"/><path fill="#d8815b" d="M-5-18H5v9H-5z"/></g>
-    <g class="moving-train"><path fill="#173d37" d="M-32-26h57v31h-57zM-25 5h10v7h-10zM10 5h10v7H10z"/><path fill="#df9169" d="M-29-23h51V1h-51zM-20-33H9v10h-29z"/><path fill="#fff4d7" d="M-22-17h10v11h-10zM-6-17H4v11H-6zM10-17h8v11h-8z"/><path class="train-light" fill="#fff2b5" d="M25-14h9v8h-9z"/></g>
+    <path class="rail-bed" d="M-30 180H420M135 180L260 83H420"/>
+    <path class="rail-ties" d="M-30 180H420M135 180L260 83H420"/>
+    <path class="rail-line" d="M-30 180H420M135 180L260 83H420"/>
+    <path class="route route-switch" d="M135 180L260 83H400"/><path class="route route-stay" d="M135 180H400"/>
+    <g class="rail-people">${person(321,70)}${[270,294,318,342,366].map(x=>person(x,167)).join('')}</g>
+    <g class="rail-lever" transform="translate(141 213)"><path fill="#244e45" d="M-12 9h24v7h-24z"/><path d="M0 9V-12" stroke="#244e45" stroke-width="5"/><path fill="#d8815b" d="M-5-18H5v9H-5z"/></g>
+    <g class="direction-sign"><path fill="#886845" d="M180 215h5v43h-5z"/><path fill="#fff5cb" stroke="#173d37" stroke-width="2" d="M150 213h63v-7l20 15-20 15v-7h-63z"/><text x="158" y="225" fill="#173d37" font-size="11" font-weight="bold">기본 경로</text></g><g class="moving-train"><path fill="#173d37" d="M-32-26h57v31h-57zM-25 5h10v7h-10zM10 5h10v7H10z"/><path fill="#df9169" d="M-29-23h51V1h-51zM-20-33H9v10h-29z"/><path fill="#fff4d7" d="M-22-17h10v11h-10zM-6-17H4v11H-6zM10-17h8v11h-8z"/><path class="train-light" fill="#fff2b5" d="M25-14h9v8h-9z"/></g>
   </svg><span class="rail-count count-one">1명</span><span class="rail-count count-five">5명</span><span class="rail-signal">${mode==='hold'?'판단 유보':mode==='switch'?'선로 변경':mode==='stay'?'선로 유지':'브레이크 고장'}</span></div>`;
 }
 
@@ -44,7 +44,7 @@ export function startTrolley({app, homeUrl, liveSession=null, submitResponse=nul
     app.querySelector('h1')?.focus({preventScroll:true});
   }
   function identify() {
-    show(`<section class="rail-story writing-story"><span class="rail-kicker">우리 반 트롤리 활동</span><h1 tabindex="-1">어떤 이름으로<br>자리에 앉을까요?</h1><p>이름과 선택, 의견이 선생님과 응답을 마친 같은 활동의 친구들에게 보여요.</p></section><form id="student-identify" class="rail-writing"><label for="student-name">이름</label><input id="student-name" name="name" maxlength="20" autocomplete="off" required value="${esc(name)}" placeholder="이름을 적어 주세요"><p id="name-error" class="form-error" role="alert"></p><button class="btn primary full" type="submit">활동 시작하기 →</button><a class="rail-home" href="${homeUrl}">활동 홈으로</a></form>`,1);
+    show(`<section class="rail-story identify-story"><h1 tabindex="-1">이름을 알려주세요</h1></section><form id="student-identify" class="rail-writing"><label class="sr-only" for="student-name">이름</label><input id="student-name" aria-label="이름" name="name" maxlength="20" autocomplete="off" required value="${esc(name)}" placeholder="이름을 적어 주세요"><p id="name-error" class="form-error" role="alert"></p><button class="btn primary full" type="submit">활동 시작하기 →</button><a class="rail-home" href="${homeUrl}">활동 홈으로</a></form>`,1);
     app.querySelector('#student-identify').onsubmit=e=>{
       e.preventDefault();name=app.querySelector('#student-name').value.trim();
       if(!name||name.length>20||/[\u0000-\u001f\u007f]/.test(name)){app.querySelector('#name-error').textContent='이름을 줄바꿈 없이 1~20자로 적어 주세요.';return;}

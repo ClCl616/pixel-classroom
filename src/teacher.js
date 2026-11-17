@@ -9,7 +9,7 @@ export async function startTeacher({app, homeUrl}) {
   document.body.classList.add('teacher-console');
   let current=null, poll=null, busy=false, refreshing=false, page=0, seen=new Set(), active=null;
   const $=selector=>app.querySelector(selector);
-  const size=()=>window.innerWidth>=900?15:6;
+  const size=()=>window.innerWidth>=900?8:6;
   let arrivals=[];
   const clearArrivals=()=>{arrivals.forEach(cancel=>cancel());arrivals=[];};
   const stop=()=>{clearInterval(poll);poll=null;clearArrivals();};

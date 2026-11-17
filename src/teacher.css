@@ -72,3 +72,13 @@ body.teacher-console{width:100%;max-width:none;height:100dvh;min-height:0;overfl
 .opinion-text{font-size:11px;line-height:14px;max-height:28px;-webkit-line-clamp:2}
 @media(max-width:899px){.opinion-choice{font-size:9px}.opinion-bubble{padding:5px;height:78px}.opinion-text{max-height:42px;-webkit-line-clamp:3}}
 .teacher-brand .robot{width:32px;height:36px;display:block;flex-shrink:0}
+/* Choice color fills the speech bubble, including its tail. */
+.opinion-bubble,.opinion-bubble:after{background:var(--choice,#fffef5)}
+.opinion-choice{background:none;color:#173d37;padding:0;font-weight:800}
+.teacher-console .opinion-bubble{height:clamp(94px,12vh,150px);padding:12px 14px;border-width:3px;bottom:82px}
+.teacher-console .opinion-choice{font-size:clamp(16px,1.2vw,24px);line-height:1.4;margin-bottom:7px}
+.teacher-console .opinion-choice .pixel-icon{width:20px;height:20px}
+.teacher-console .opinion-text{font-size:clamp(17px,1.3vw,26px);line-height:1.5;max-height:3em;-webkit-line-clamp:2;font-weight:600}
+.teacher-console .desk-name{font-size:clamp(15px,1.2vw,23px);min-height:24px}
+@media(min-width:900px){.teacher-console .desk-grid{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}}
+@media(max-width:899px){.teacher-console .opinion-bubble{height:100px;padding:8px}.teacher-console .opinion-choice{font-size:11px}.teacher-console .opinion-text{font-size:13px}.teacher-console .desk-name{font-size:12px}}

@@ -2,21 +2,31 @@ import {choices,escapeHtml as esc} from './domain.js';
 import {pupil,pixelIcon} from './pixel-art.js';
 
 export function showPeerResponses({app,loadPeers,ownSeat,onBack}) {
- let answers=[],filter='all',busy=false,active=true;
- app.innerHTML=`<main class="rail-activity peer-page"><header class="peer-header"><button id="peer-back" aria-label="내 결과로 돌아가기">${pixelIcon('previous')}</button><h1>친구들의 생각</h1><button id="peer-refresh">새로고침</button></header><div class="peer-filters" role="group" aria-label="선택별 보기">${[{id:'all',short:'전체'},...choices].map(c=>`<button data-filter="${c.id}" aria-pressed="${c.id==='all'}">${c.short}</button>`).join('')}</div><p id="peer-status" role="status"></p><section id="peer-list" class="peer-list" aria-label="친구들의 응답" tabindex="0"></section></main>`;
+ let room=null,page=0,busy=false,active=true,last='';
+ app.innerHTML=`<main class="rail-activity peer-page"><header class="peer-header"><button id="peer-back" aria-label="내 결과로 돌아가기">${pixelIcon('previous')}</button><h1>우리 반 생각 교실</h1></header><p id="peer-status" role="status"></p><section id="peer-grid" class="desk-grid peer-grid" aria-label="친구들의 책상"></section><nav class="peer-pagination" aria-label="책상 페이지"><button id="peer-prev" aria-label="이전 책상">${pixelIcon('previous')}</button><span id="peer-page"></span><button id="peer-next" aria-label="다음 책상">${pixelIcon('next')}</button></nav><dialog id="peer-detail" class="desk-dialog" aria-labelledby="peer-title"><form method="dialog"><button aria-label="의견 닫기">${pixelIcon('close')}</button></form><div id="peer-opinion"></div></dialog></main>`;
  const $=s=>app.querySelector(s);
  function paint(){
-  const shown=answers.filter(a=>a.seat!==ownSeat&&(filter==='all'||a.choice===filter));
-  $('#peer-list').innerHTML=shown.length?shown.map(a=>{const c=choices.find(c=>c.id===a.choice);return `<article class="peer-card"><div class="peer-person">${pupil(a.seat)}<h2>${esc(a.name)} 학생의 생각</h2></div><div class="result-choice ${c.color}">${pixelIcon(c.id)}<strong>${c.label}</strong></div><p>${esc(a.reason)}</p></article>`;}).join(''):'<p class="peer-empty">아직 이 선택에 도착한 친구의 생각이 없어요.</p>';
+  if(!room)return;
+  const total=Math.max(room.expected,...room.answers.map(a=>a.seat)),pages=Math.ceil(total/4);
+  page=Math.min(page,pages-1);
+  $('#peer-grid').innerHTML=Array.from({length:Math.min(4,total-page*4)},(_,i)=>{
+   const seat=page*4+i+1,a=room.answers.find(a=>a.seat===seat),c=choices.find(c=>c.id===a?.choice);
+   return `<div class="desk-slot ${a?'occupied '+c.color:''}">${a?`<button class="opinion-bubble" data-seat="${seat}" aria-label="${esc(a.name)} 학생의 생각 보기"><span class="opinion-choice">${pixelIcon(c.id)} ${c.label}</span><span class="opinion-text">${esc(a.reason)}</span></button><div class="pupil-seat">${pupil(seat)}</div>`:''}<div class="desk-top"></div><div class="desk-legs"></div><span class="desk-name">${a?esc(a.name)+(seat===ownSeat?' (나)':''):''}</span></div>`;
+  }).join('');
+  app.querySelectorAll('[data-seat]').forEach(button=>button.onclick=()=>{const a=room.answers.find(a=>a.seat===Number(button.dataset.seat)),c=choices.find(c=>c.id===a.choice);$('#peer-opinion').innerHTML=`<h2 id="peer-title">${esc(a.name)} 학생의 생각</h2><p class="detail-choice ${c.color}">${pixelIcon(c.id)} ${c.label}</p><p>${esc(a.reason)}</p>`;$('#peer-detail').showModal();});
+  $('#peer-page').textContent=`${page+1} / ${pages}`;$('#peer-prev').hidden=page===0;$('#peer-next').hidden=page===pages-1;
+  $('.peer-pagination').hidden=pages===1;
  }
  async function refresh(){
-  if(busy)return;busy=true;$('#peer-refresh').disabled=true;$('#peer-status').textContent='생각을 불러오고 있어요.';
-  try{const result=await loadPeers();if(!active)return;answers=result.answers||[];paint();$('#peer-status').textContent=`친구 ${answers.filter(a=>a.seat!==ownSeat).length}명의 생각`;}
-  catch(error){if(active)$('#peer-status').textContent=error.message||'다시 불러와 주세요.';}
-  finally{busy=false;if(active)$('#peer-refresh').disabled=false;}
+  if(busy||!active||document.hidden)return;busy=true;
+  try{const result=await loadPeers();if(!active)return;room=result;const next=JSON.stringify(result.answers);if(next!==last){last=next;paint();}$('#peer-status').textContent='';}
+  catch(error){if(active)$('#peer-status').textContent=error.message||'연결을 다시 확인하고 있어요.';}
+  finally{busy=false;}
  }
- $('#peer-back').onclick=()=>{active=false;onBack();};
- $('#peer-refresh').onclick=refresh;
- app.querySelectorAll('[data-filter]').forEach(button=>button.onclick=()=>{filter=button.dataset.filter;app.querySelectorAll('[data-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));paint();$('#peer-list').scrollTop=0;});
+ const timer=setInterval(refresh,2000);
+ const cleanup=()=>{active=false;clearInterval(timer);window.removeEventListener('pagehide',cleanup);};
+ window.addEventListener('pagehide',cleanup,{once:true});
+ $('#peer-back').onclick=()=>{cleanup();onBack();};
+ $('#peer-prev').onclick=()=>{page--;paint();};$('#peer-next').onclick=()=>{page++;paint();};
  refresh();
 }
