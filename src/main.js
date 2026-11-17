@@ -65,7 +65,7 @@ function bind() {
 }
 async function init(){
  if(params.get('activity')==='trolley' && !teacher && !params.get('room')){
-  startTrolley({app:$('#app'),header:homeHeader(),scene:scene(),homeUrl:url('student')});return;
+  startTrolley({app:$('#app'),homeUrl:url('student')});return;
  }
  if(params.get('activity')==='cyber' && teacher){cyberTeacherPage();return;}
  render();

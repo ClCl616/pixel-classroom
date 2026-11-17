@@ -79,3 +79,13 @@ dialog{width:min(368px,calc(100vw - 32px));padding:24px}
 /* The activity's outer header stays visible on scrolling pages. */
 body>header{position:sticky;top:0;z-index:30;background:var(--paper)}
 html{scroll-padding-top:86px}
+
+/* Opening an activity uses the full window, without the site header. */
+body>header,body>footer{display:none}
+body{height:100dvh;min-height:0;overflow:hidden}
+body:not(.immersed) main{height:100dvh;min-height:0}
+body.immersed main{height:100dvh;min-height:0}
+.experience{height:100dvh;min-height:0;overflow:hidden}
+/* Chat history remains independently scrollable; the page itself stays still. */
+.immersive-chat{min-height:0}
+@media(max-height:440px){body:not(.immersed) main{height:100dvh}.experience{height:100dvh;min-height:0;overflow:hidden}.immersive-chat{min-height:0}.reflection-content{min-height:0}.intro-scene{padding:0}.intro-scene h1{font-size:30px}.intro-scene .lead{font-size:12px}.intro-scene .fine{display:none}.reflection .reflection-content{padding:10px 16px}.reflection .choice-feedback h2{font-size:18px}.reflection .choice-feedback p{font-size:11px;line-height:1.5}.reflection .selected-action{padding:8px}.reflection .selected-action p{font-size:11px}.reflection .result-card{display:flex;gap:10px}.reflection .practice-finish{display:flex;gap:10px}.reflection .practice-finish h2{font-size:24px}}
