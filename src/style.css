@@ -39,3 +39,19 @@ body{width:100%;max-width:400px;min-height:100svh;margin:0 auto;box-shadow:0 0 0
 .home-heading h1{font-size:25px}
 .activity-dialog{width:min(368px,calc(100vw - 32px))}
 #toast{max-width:min(360px,calc(100vw - 40px))}
+
+/* Keep navigation visible within the mobile canvas while the page scrolls. */
+.home-header,#app>header{position:sticky;top:0;z-index:30;background:#f5f3e8;flex-shrink:0}
+html{scroll-padding-top:92px}
+.trolley-main{width:100%;padding:28px 20px 44px;flex:1}
+.trolley-main h1{scroll-margin-top:92px}
+.trolley-main .section-label label{margin:0;font:inherit;color:inherit}
+.form-error{color:#943e26;font-size:12px;line-height:1.7}
+.form-error:empty{display:none}
+.trolley-main form>.btn{margin-top:20px}
+.trolley-main .micro{line-height:1.8}
+.trolley-reflection,.trolley-perspectives{margin-top:28px}
+.trolley-reflection{padding:20px;border:1px solid var(--line);background:#e9eedb}
+.trolley-reflection h2,.trolley-perspectives h2{font-size:17px;margin:0 0 12px}
+.trolley-reflection p,.trolley-perspectives p{font-size:14px;line-height:1.9;margin:10px 0 0}
+.trolley-actions{display:grid;gap:12px;margin-top:28px}
