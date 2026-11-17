@@ -10,7 +10,7 @@ export function startStudentActivity({app,homeUrl,practice=false}) {
   const cleanup=()=>clearInterval(timer);
   window.addEventListener('pagehide',cleanup,{once:true});
   const practiceUrl=new URL(location.href);practiceUrl.searchParams.set('practice','1');
-  app.innerHTML=`<main class="rail-activity"><section class="rail-story rail-finish"><div class="pixel-thought" aria-hidden="true">${robot()}</div><h1 tabindex="-1">우리 교실에<br>연결하고 있어요.</h1><p id="live-wait-message" role="status">선생님이 트롤리 활동을 열면 바로 시작해요.</p></section><div class="rail-controls"><button class="btn primary full" id="live-retry">다시 확인하기</button><a class="rail-home" href="${esc(practiceUrl.href)}">혼자 체험하기</a><a class="rail-home" href="${homeUrl}">활동 홈으로</a></div></main>`;
+  app.innerHTML=`<main class="rail-activity"><section class="rail-story rail-finish"><div class="pixel-thought" aria-hidden="true">${robot()}</div><h1 tabindex="-1">우리 교실에<br>연결하고 있어요.</h1><p id="live-wait-message" role="status">선생님이 트롤리 활동을 열면 바로 시작해요.</p></section><div class="rail-controls"><button class="btn primary full" id="live-retry">다시 확인하기</button><a class="rail-home" href="${esc(practiceUrl.href)}">혼자 체험하기</a><a class="btn quiet full" href="${homeUrl}">종료하기</a></div></main>`;
   async function check(){
     if(checking||launched||document.hidden)return;checking=true;
     const retry=app.querySelector('#live-retry');if(retry)retry.disabled=true;

@@ -35,7 +35,7 @@ test('standalone trolley supports all choices, validation, editing and a fresh r
   node('#rail-edit').onclick();assert.ok(app.innerHTML.includes('&lt;img src=x&gt;'));
   input.value='다시 생각한 이유예요.';input.oninput();node('#trolley-response').onsubmit({preventDefault(){}});
   assert.ok(app.innerHTML.includes('다시 생각한 이유예요.'));
-  node('#rail-next').onclick();assert.ok(app.innerHTML.includes('활동 마치기'));
+  assert.ok(app.innerHTML.includes('종료하기'));assert.ok(!app.innerHTML.includes('다른 관점 만나기'));
   node('#rail-restart').onclick();node('#rail-next').onclick();buttons[0].onclick();node('#rail-next').onclick();
   assert.ok(app.innerHTML.includes('>0 / 120</span>'));
   assert.ok(!app.innerHTML.includes('다시 생각한 이유예요.'));
@@ -61,7 +61,7 @@ test('live trolley requires a name, preserves a failed submission and confirms t
  await node('#trolley-response').onsubmit({preventDefault(){}});
  assert.equal(attempts,1);assert.ok(app.innerHTML.includes('trolley-response'));assert.ok(node('#trolley-error').textContent.includes('연결'));assert.equal(node('#trolley-response button[type="submit"]').disabled,false);
  await node('#trolley-response').onsubmit({preventDefault(){}});
- assert.equal(attempts,2);assert.equal(sent.name,'민서');assert.equal(sent.choice,'switch');assert.equal(sent.reason,'생명을 보호하고 싶어요.');assert.ok(app.innerHTML.includes('3번 자리에 앉았어요'));assert.ok(!app.innerHTML.includes('id="rail-edit"'));assert.ok(app.innerHTML.includes(pupil(3)));assert.ok(app.innerHTML.includes('민서 학생의 생각'));assert.ok(app.innerHTML.includes(sent.reason));
+ assert.equal(attempts,2);assert.equal(sent.name,'민서');assert.equal(sent.choice,'switch');assert.equal(sent.reason,'생명을 보호하고 싶어요.');assert.ok(!app.innerHTML.includes('번 자리에 앉았어요'));assert.ok(!app.innerHTML.includes('id="rail-edit"'));assert.ok(app.innerHTML.includes(pupil(3)));assert.ok(app.innerHTML.includes('민서 학생의 생각'));assert.ok(app.innerHTML.includes(sent.reason));
  node('#rail-peers').onclick();assert.equal(peerView.ownSeat,3);peerView.onBack();assert.ok(app.innerHTML.includes('친구들의 응답보기'));
- node('#rail-next').onclick();assert.ok(!app.innerHTML.includes('id="rail-restart"'));
+ assert.ok(!app.innerHTML.includes('id="rail-restart"'));assert.ok(!app.innerHTML.includes('다른 관점 만나기'));assert.ok(app.innerHTML.includes('종료하기'));
 });
