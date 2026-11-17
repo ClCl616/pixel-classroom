@@ -53,3 +53,49 @@ function demoCall(action, p) {
   const own = room.responses.find(r=>r.uid===uid);
   return {...room,count:room.responses.length,own:own||null,responses:room.status === 'revealed' ? room.responses.map(({choice,reason})=>({choice,reason})) : null};
 }
+
+// Live classroom has a separate RPC: names and opinions are returned only to its teacher.
+export async function liveCall(action, payload = {}) {
+  if (demo) return liveDemo(action, payload);
+  if (!client) throw new Error('수업 서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.');
+  const {data:{session}} = await client.auth.getSession();
+  if (!session && role === 'student') {
+    const {error} = await client.auth.signInAnonymously();
+    if (error) throw error;
+  }
+  const {data,error} = await client.rpc('pixel_live',{action,payload});
+  if (error) throw error;
+  return data;
+}
+const liveDemoKey='pixel-live-demo-v1';
+function liveDemo(action,p) {
+  let current=JSON.parse(localStorage.getItem(liveDemoKey)||'null');
+  const persist=()=>localStorage.setItem(liveDemoKey,JSON.stringify(current));
+  if(action==='teacher_session')return {active:current?.status!=='ended'?current:null};
+  if(action==='start'){
+    if(!current||current.status==='ended'){
+      current={code:crypto.randomUUID(),status:'open',expected:Number(p.expected)||15,answers:[]};persist();
+    }
+  }
+  if(action==='active'&&(!current||current.status==='ended'))return null;
+  if(!current||(p.code&&p.code!==current.code))throw new Error('활동을 찾을 수 없습니다.');
+  if(action==='state'){if(current.status==='ended')throw new Error('종료된 활동입니다.');current.status=p.status;persist();}
+  if(action==='finish'){current.status='ended';persist();}
+  if(action==='submit'){
+    if(current.status!=='open')throw new Error('응답이 마감되었어요. 선생님께 확인해 주세요.');
+    const reason=validateResponse(p.choice,p.reason),name=String(p.name||'').trim();
+    if(!name||name.length>20||/[\u0000-\u001f\u007f]/.test(name))throw new Error('이름을 1~20자로 적어 주세요.');
+    const existing=current.answers.find(a=>a.uid===uid);
+    if(existing&&(existing.name!==name||existing.choice!==p.choice||existing.reason!==reason))throw new Error('이미 제출한 응답이 있습니다.');
+    if(!existing)current.answers.push({uid,name,choice:p.choice,reason,seat:current.answers.length+1});persist();
+  }
+  if(action==='seed'){
+    if(current.status!=='open')throw new Error('응답을 다시 열어 주세요.');
+    const i=current.answers.length;
+    const samples=[['민서','switch','가능한 한 많은 사람을 보호하고 싶어요.'],['하준','stay','한 사람을 일부러 위험하게 하고 싶지 않아요.'],['지우','hold','두 선택 모두 누군가 위험해서 고민돼요.']];
+    const [name,choice,reason]=samples[i%3];
+    current.answers.push({uid:crypto.randomUUID(),name,choice,reason,seat:i+1});persist();
+  }
+  const own=current.answers.find(a=>a.uid===uid);
+  return {...current,count:current.answers.length,own:own?{name:own.name,choice:own.choice,reason:own.reason,seat:own.seat}:null,answers:['teacher_get','start','state','finish','seed'].includes(action)?current.answers.map(({uid,...answer})=>answer):null};
+}

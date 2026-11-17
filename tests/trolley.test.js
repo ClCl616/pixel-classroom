@@ -40,3 +40,24 @@ test('standalone trolley supports all choices, validation, editing and a fresh r
   assert.ok(!app.innerHTML.includes('다시 생각한 이유예요.'));
  }
 });
+
+test('live trolley requires a name, preserves a failed submission and confirms the assigned seat only after success',async()=>{
+ const source=fs.readFileSync(new URL('../src/trolley.js',import.meta.url),'utf8').replace(/^import .*;\r?\n/gm,'').replace('export function startTrolley','function startTrolley');
+ const nodes=new Map();const node=s=>{if(!nodes.has(s))nodes.set(s,{value:'',textContent:'',disabled:false,focus(){}});return nodes.get(s);};
+ const buttons=choices.map(c=>({dataset:{choice:c.id}}));
+ const app={innerHTML:'',style:{setProperty(){}},querySelector:node,querySelectorAll:()=>buttons};
+ let attempts=0,sent;
+ const submitResponse=async payload=>{attempts++;sent=payload;if(attempts===1)throw new Error('연결이 끊겼어요. 다시 보내 주세요.');return {own:{...payload,seat:3}};};
+ const context=vm.createContext({choices,esc:escapeHtml,validateResponse,app,submitResponse,document:{body:{classList:{add(){}}}},window:{innerHeight:568,addEventListener(){}}});
+ vm.runInContext(source,context);vm.runInContext("startTrolley({app,homeUrl:'/',liveSession:{code:'ROOM'},submitResponse});",context);
+ assert.ok(app.innerHTML.includes('student-identify'));
+ node('#student-name').value=' ';node('#student-identify').onsubmit({preventDefault(){}});assert.ok(node('#name-error').textContent);
+ node('#student-name').value='민서';node('#student-identify').onsubmit({preventDefault(){}});
+ node('#rail-next').onclick();buttons[0].onclick();node('#rail-next').onclick();
+ node('#trolley-reason').value='생명을 보호하고 싶어요.';node('#trolley-reason').oninput();
+ await node('#trolley-response').onsubmit({preventDefault(){}});
+ assert.equal(attempts,1);assert.ok(app.innerHTML.includes('trolley-response'));assert.ok(node('#trolley-error').textContent.includes('연결'));assert.equal(node('#trolley-response button[type="submit"]').disabled,false);
+ await node('#trolley-response').onsubmit({preventDefault(){}});
+ assert.equal(attempts,2);assert.equal(sent.name,'민서');assert.equal(sent.choice,'switch');assert.equal(sent.reason,'생명을 보호하고 싶어요.');assert.ok(app.innerHTML.includes('3번 자리에 앉았어요'));assert.ok(!app.innerHTML.includes('id="rail-edit"'));
+ node('#rail-next').onclick();assert.ok(!app.innerHTML.includes('id="rail-restart"'));
+});

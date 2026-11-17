@@ -28,9 +28,10 @@ function landscape(mode) {
   </svg><span class="rail-count count-one">1명</span><span class="rail-count count-five">5명</span><span class="rail-signal">${mode==='hold'?'판단 유보':mode==='switch'?'선로 변경':mode==='stay'?'선로 유지':'브레이크 고장'}</span></div>`;
 }
 
-// All choices and writing stay in this page's memory; no class or server is needed.
-export function startTrolley({app, homeUrl}) {
-  let choice='', reason='';
+// Practice stays local. Live responses are submitted only after the student confirms.
+export function startTrolley({app, homeUrl, liveSession=null, submitResponse=null}) {
+  let choice=liveSession?.own?.choice||'', reason=liveSession?.own?.reason||'', name=liveSession?.own?.name||'', submitted=Boolean(liveSession?.own), sending=false;
+  let seat=liveSession?.own?.seat;
   document.body.classList.add('trolley-immersed');
   const viewport=window.visualViewport;
   const fit=()=>app.style.setProperty('--activity-height',`${viewport?.height || window.innerHeight}px`);
@@ -39,6 +40,14 @@ export function startTrolley({app, homeUrl}) {
   function show(content, stage) {
     app.innerHTML=`<main class="rail-activity" aria-label="트롤리 딜레마"><div class="rail-progress" aria-label="${stage} / 5 단계">${[1,2,3,4,5].map(i=>`<i class="${i<=stage?'done':''}"></i>`).join('')}</div>${content}</main>`;
     app.querySelector('h1')?.focus({preventScroll:true});
+  }
+  function identify() {
+    show(`<section class="rail-story writing-story"><span class="rail-kicker">우리 반 트롤리 활동</span><h1 tabindex="-1">어떤 이름으로<br>자리에 앉을까요?</h1><p>이름과 선택, 의견이 선생님의 교실 화면에 함께 나타나요.</p></section><form id="student-identify" class="rail-writing"><label for="student-name">이름</label><input id="student-name" name="name" maxlength="20" autocomplete="off" required value="${esc(name)}" placeholder="이름을 적어 주세요"><p id="name-error" class="form-error" role="alert"></p><button class="btn primary full" type="submit">활동 시작하기 →</button><a class="rail-home" href="${homeUrl}">활동 홈으로</a></form>`,1);
+    app.querySelector('#student-identify').onsubmit=e=>{
+      e.preventDefault();name=app.querySelector('#student-name').value.trim();
+      if(!name||name.length>20||/[\u0000-\u001f\u007f]/.test(name)){app.querySelector('#name-error').textContent='이름을 줄바꿈 없이 1~20자로 적어 주세요.';return;}
+      intro();
+    };
   }
   function intro() {
     show(`${landscape('approach')}<section class="rail-story"><span class="rail-kicker">트롤리 딜레마</span><h1 tabindex="-1">기차가 멈추지 않아요.</h1><p>브레이크가 고장 났어요.<br>앞에는 다섯 명, 다른 선로에는 한 명.<br>당신 앞에는 선로를 바꾸는 레버가 있어요.</p></section><div class="rail-controls"><button class="btn primary full" id="rail-next">갈림길 살펴보기 →</button><a class="rail-home" href="${homeUrl}">활동 나가기</a></div>`,1);
@@ -54,20 +63,30 @@ export function startTrolley({app, homeUrl}) {
     app.querySelector('#rail-back').onclick=decide;
   }
   function write() {
-    show(`<section class="rail-story writing-story"><span class="rail-kicker">${choices.find(c=>c.id===choice).label}</span><h1 tabindex="-1">어떤 기준이<br>중요했나요?</h1><p>그렇게 선택한 이유를 한 문장으로 적어 주세요.</p></section><form id="trolley-response" class="rail-writing"><label for="trolley-reason">나의 이유</label><textarea id="trolley-reason" name="reason" maxlength="120" required rows="3" aria-describedby="trolley-hint trolley-error" placeholder="나는 …이 중요하다고 생각했어요.">${esc(reason)}</textarea><div class="rail-input-note"><span id="trolley-hint">줄바꿈 없이 1~120자</span><span id="trolley-counter">${reason.length} / 120</span></div><p id="trolley-error" class="form-error" role="alert"></p><button class="btn primary full" type="submit">내 생각 돌아보기 →</button><button class="rail-home" type="button" id="rail-back">다시 선택하기</button></form>`,4);
+    show(`<section class="rail-story writing-story"><span class="rail-kicker">${choices.find(c=>c.id===choice).label}</span><h1 tabindex="-1">어떤 기준이<br>중요했나요?</h1><p>그렇게 선택한 이유를 한 문장으로 적어 주세요.</p></section><form id="trolley-response" class="rail-writing"><label for="trolley-reason">나의 이유</label><textarea id="trolley-reason" name="reason" maxlength="120" required rows="3" aria-describedby="trolley-hint trolley-error" placeholder="나는 …이 중요하다고 생각했어요.">${esc(reason)}</textarea><div class="rail-input-note"><span id="trolley-hint">줄바꿈 없이 1~120자</span><span id="trolley-counter">${reason.length} / 120</span></div><p id="trolley-error" class="form-error" role="alert"></p><button class="btn primary full" type="submit">${liveSession?'교실에 내 생각 보내기 →':'내 생각 돌아보기 →'}</button><button class="rail-home" type="button" id="rail-back">다시 선택하기</button></form>`,4);
     const input=app.querySelector('#trolley-reason');
     input.oninput=()=>{reason=input.value;app.querySelector('#trolley-counter').textContent=`${reason.length} / 120`;app.querySelector('#trolley-error').textContent='';};
-    app.querySelector('#trolley-response').onsubmit=e=>{e.preventDefault();try{reason=validateResponse(choice,input.value);}catch(error){app.querySelector('#trolley-error').textContent=error.message;return;}reflect();};
+    app.querySelector('#trolley-response').onsubmit=async e=>{
+      e.preventDefault();if(sending)return;
+      try{reason=validateResponse(choice,input.value);}catch(error){app.querySelector('#trolley-error').textContent=error.message;return;}
+      if(liveSession){
+        sending=true;const button=app.querySelector('#trolley-response button[type="submit"]');button.disabled=true;app.querySelector('#rail-back').disabled=true;
+        try{const result=await submitResponse({name,choice,reason});seat=result.own.seat;submitted=true;}
+        catch(error){app.querySelector('#trolley-error').textContent=error.message||'전송하지 못했어요. 다시 눌러 주세요.';return;}
+        finally{sending=false;button.disabled=false;app.querySelector('#rail-back').disabled=false;}
+      }
+      reflect();
+    };
     app.querySelector('#rail-back').onclick=decide;
   }
   function reflect() {
-    show(`<section class="rail-story"><span class="rail-kicker">나의 선택과 이유</span><h1 tabindex="-1">${choices.find(c=>c.id===choice).label}</h1><blockquote class="rail-answer">${esc(reason)}</blockquote><h2>한 걸음 더 생각해 보기</h2><p>${questions[choice]}</p></section><div class="rail-controls"><button class="btn primary full" id="rail-next">다른 관점 만나기 →</button><button class="rail-home" id="rail-edit">이유 다시 쓰기</button></div>`,5);
-    app.querySelector('#rail-edit').onclick=write;
+    show(`<section class="rail-story"><span class="rail-kicker">${submitted?`${esc(name)} · ${seat}번 자리에 앉았어요`:'나의 선택과 이유'}</span><h1 tabindex="-1">${choices.find(c=>c.id===choice).label}</h1><blockquote class="rail-answer">${esc(reason)}</blockquote><h2>한 걸음 더 생각해 보기</h2><p>${questions[choice]}</p></section><div class="rail-controls"><button class="btn primary full" id="rail-next">다른 관점 만나기 →</button>${submitted?'':'<button class="rail-home" id="rail-edit">이유 다시 쓰기</button>'}</div>`,5);
+    if(!submitted)app.querySelector('#rail-edit').onclick=write;
     app.querySelector('#rail-next').onclick=finish;
   }
   function finish() {
-    show(`<section class="rail-story rail-finish"><div class="pixel-thought" aria-hidden="true">↗ ↑ …</div><h1 tabindex="-1">선택 뒤에는<br>서로 다른 기준이 있어요.</h1><p>피해를 줄이는 것.<br>다른 사람에게 위험을 옮기지 않는 것.<br>충분한 근거를 갖추는 것.</p><p>선택이 다른 친구와<br>서로의 이유를 이야기해 보세요.</p></section><div class="rail-controls"><a class="btn primary full" href="${homeUrl}">활동 마치기</a><button class="rail-home" id="rail-restart">다시 체험하기</button></div>`,5);
-    app.querySelector('#rail-restart').onclick=()=>{choice='';reason='';intro();};
+    show(`<section class="rail-story rail-finish"><div class="pixel-thought" aria-hidden="true">↗ ↑ …</div><h1 tabindex="-1">선택 뒤에는<br>서로 다른 기준이 있어요.</h1><p>피해를 줄이는 것.<br>다른 사람에게 위험을 옮기지 않는 것.<br>충분한 근거를 갖추는 것.</p><p>선택이 다른 친구와<br>서로의 이유를 이야기해 보세요.</p></section><div class="rail-controls"><a class="btn primary full" href="${homeUrl}">활동 마치기</a>${submitted?'':'<button class="rail-home" id="rail-restart">다시 체험하기</button>'}</div>`,5);
+    if(!submitted)app.querySelector('#rail-restart').onclick=()=>{choice='';reason='';intro();};
   }
-  intro();
+  if(submitted)reflect();else if(liveSession)identify();else intro();
 }
