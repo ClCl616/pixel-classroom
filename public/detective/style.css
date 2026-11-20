@@ -58,3 +58,19 @@ button.speech:active:not(:disabled){transform:none}
 .dialogue-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;width:100%;color:#52695a}
 .dialogue-tools .line-count{font-size:12px;margin:0}.dialogue-tools button{font-size:12px;min-height:44px;padding:8px}
 @media(max-width:680px){.scene-story .workspace{gap:10px}.speech-hint{font-size:12px}.scene-story .spoken-line{min-height:3.3em}}
+
+/* Two invisible half-bubble targets keep the mobile scene uncluttered. */
+.speech-directional{position:relative;width:100%;text-align:left;font-weight:400}
+.speech-directional .speech-hint{display:flex;justify-content:space-between;gap:8px;margin-left:calc(-1 * (100px + 20px));font-size:12px}
+.speech-zone{position:absolute;top:0;bottom:0;width:50%;border:0!important;background:transparent!important;border-radius:0;padding:0;box-shadow:none;touch-action:manipulation}
+.speech-zone:hover:not(:disabled){background:#244e4108!important}.speech-zone:active:not(:disabled){transform:none;background:#244e4112!important}
+.speech-zone:focus-visible{outline:3px solid #42664f;outline-offset:-4px}.speech-left{left:0}.speech-right{right:0}
+.speech-directional:has(.speech-left:disabled) .speech-hint>span:first-child{opacity:.45}
+@media(max-width:680px){.speech-directional .speech-hint{margin-left:-84px;font-size:11px}}
+@media(max-width:360px){.speech-directional .speech-hint{margin-left:-74px}}
+@media(prefers-reduced-motion:no-preference){
+ .teach-touch .speech-hint>span:first-child{animation:teach-left .8s ease-in-out 3}
+ .teach-touch .next-hint{animation:teach-right .8s .4s ease-in-out 3}
+ @keyframes teach-left{50%{translate:-5px 0;color:#173d37;opacity:1}}
+ @keyframes teach-right{50%{translate:5px 0;color:#173d37}}
+}

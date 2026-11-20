@@ -50,3 +50,10 @@ export const concepts=[
   {name:'사이버 따돌림',tag:'이번 사건에서 확인',body:'온라인 모임이나 대화에서 특정 사람을 의도적으로 배제하는 행동',example:'“지안이는 빼고 따로 방 만들자.”',color:'lilac'},
   {name:'거짓 정보 유포',tag:'함께 알아두기',body:'확인되지 않거나 거짓인 이야기를 퍼뜨려 상대에게 피해를 주는 행동',example:'이번 사건에서 확인된 단서는 아니에요.',color:''}
 ];
+
+// Returns false only when moving forward beyond the final dialogue page.
+export function stepDialogue(story,direction){
+  if(direction<0){story.index=Math.max(0,story.index-1);return true;}
+  if(story.index>=story.lines.length-1)return false;
+  story.index++;return true;
+}

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {newCase,inspect,evidenceReady,writingReady,planReady,escapeHtml,messages,actions} from '../public/detective/data.js';
-import {createTypewriter,caseBoard,dialoguePages,evidencePages} from '../public/detective/scenes.js';
+import {createTypewriter,caseBoard,dialoguePages,evidencePages,stepDialogue} from '../public/detective/scenes.js';
 
 test('short dialogue pages preserve all words, punctuation and speakers',()=>{
   const lines=['반 단톡방에서 메시지가 멈췄어. 무슨 일이 있었는지 함께 살펴볼까?',{speaker:'지안',text:'내 얘기를 다른 방에서도 하는 것 같아. 그만하라고 말하면 더 놀릴까 봐 무서워.'}];
@@ -118,4 +118,15 @@ test('speech activation reveals first, then advances once, including instant dia
   typer.start('즉시 표시',value=>text=value,()=>{},true);
   typer.advance(next);assert.equal(advances,2);
   typer.stop();assert.equal(timers.size,0);
+});
+
+
+test('dialogue navigation clamps the start, revisits read lines and ends only after the last page',()=>{
+  const story={lines:dialoguePages(['첫 대사. 두 번째 대사. 마지막 대사.']),index:0,read:new Set([0])};
+  assert.equal(stepDialogue(story,-1),true);assert.equal(story.index,0);
+  assert.equal(stepDialogue(story,1),true);assert.equal(story.index,1);
+  assert.equal(stepDialogue(story,-1),true);assert.equal(story.index,0);assert.equal(story.read.has(story.index),true);
+  stepDialogue(story,1);stepDialogue(story,1);
+  assert.equal(story.index,2);assert.equal(stepDialogue(story,1),false);assert.equal(story.index,2);
+  assert.equal(stepDialogue(story,-1),true);assert.equal(story.index,1);
 });
