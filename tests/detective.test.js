@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {newCase,inspect,evidenceReady,writingReady,planReady,escapeHtml,messages,actions} from '../public/detective/data.js';
+import {createTypewriter,caseBoard} from '../public/detective/scenes.js';
 
 test('evidence requires both files and four correctly classified clues, never supportive messages',()=>{
   const state=newCase();
@@ -49,4 +50,34 @@ test('new cases isolate all private state and writing is escaped for HTML displa
   const fresh=newCase();
   assert.deepEqual(fresh.clues,[]);assert.deepEqual(fresh.drafts,['','']);assert.deepEqual(fresh.plan,[]);assert.deepEqual(fresh.answers,[]);assert.equal(fresh.pledge,'');assert.equal(fresh.reviews[0][0],false);
   assert.equal(escapeHtml('<img src=x onerror="alert(1)">&'), '&lt;img src=x onerror=&quot;alert(1)&quot;&gt;&amp;');
+});
+
+test('the board connects only discovered clues and animates only the newest pin',()=>{
+  let html=caseBoard([]);
+  assert.equal((html.match(/class="thread /g)||[]).length,0);
+  assert.ok(!html.includes('표정 왜 저래'));
+  html=caseBoard(['a1','b4'],'b4');
+  assert.equal((html.match(/class="thread /g)||[]).length,2);
+  assert.equal((html.match(/new-thread/g)||[]).length,1);
+  assert.equal((html.match(/new-pin/g)||[]).length,1);
+  assert.ok(html.includes('표정 왜 저래'));
+  assert.ok(!html.includes('그 얼굴로 발표한 거야'));
+  assert.ok(!caseBoard(['a1','b4']).includes('new-thread'));
+});
+
+test('dialogue reveal, reduced motion and scene exit cancel every pending character callback',()=>{
+  let next=0;const timers=new Map();const outputs=[];let completed=0;
+  const typer=createTypewriter({schedule:fn=>{timers.set(++next,fn);return next;},cancel:id=>timers.delete(id)});
+  const tick=()=>{const [id,fn]=timers.entries().next().value;timers.delete(id);fn();};
+  typer.start('회로 탐정의 첫 번째 대사',value=>outputs.push(value),()=>completed++);
+  assert.equal(typer.isTyping(),true);tick();assert.equal(outputs.at(-1),'회로');
+  const stale=timers.values().next().value;
+  typer.start('새 장면',value=>outputs.push(value),()=>completed++);
+  stale();assert.equal(outputs.at(-1),'');
+  typer.finish();assert.equal(outputs.at(-1),'새 장면');assert.equal(timers.size,0);assert.equal(completed,1);
+  typer.finish();assert.equal(completed,1);
+  typer.start('동작 감소',value=>outputs.push(value),()=>completed++,true);
+  assert.equal(outputs.at(-1),'동작 감소');assert.equal(timers.size,0);assert.equal(completed,2);
+  typer.start('종료 뒤 남으면 안 되는 말',value=>outputs.push(value));
+  typer.stop();assert.equal(timers.size,0);assert.equal(typer.isTyping(),false);
 });

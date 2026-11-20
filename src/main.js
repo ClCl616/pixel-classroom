@@ -25,7 +25,7 @@ function landing() {
  ${homeHeader()}
  <main class="home-main">
  <div class="home-heading"><div><p class="home-label">함께 배우는 픽셀 교실</p><h1>오늘은 어떤 활동을 할까?</h1></div><span class="home-spark" aria-hidden="true">✦</span></div>
- <div class="home-activities">
+ <div class="home-activities" role="region" aria-label="활동 목록" tabindex="0">
  <article class="home-card home-trolley"><div class="home-art trolley-art"><img class="trolley-preview" src="${import.meta.env.BASE_URL}trolley-preview.svg" alt="갈림길로 다가오는 픽셀 기차와 위쪽 선로의 한 명, 아래쪽 선로의 다섯 명"><span class="activity-number" aria-hidden="true">01</span></div><div class="home-card-content"><span class="home-tag">선택과 토론</span><h2>트롤리 딜레마</h2><p>나의 선택과 이유를 함께 나눠요.</p><a class="home-card-link" href="?activity=trolley${isDemo?'&demo=1':''}">활동 참여하기 <span aria-hidden="true">→</span></a></div></article>
  <article class="home-card home-cyber"><div class="home-art cyber-art" aria-hidden="true"><span class="activity-number">02</span><div class="pixel-chat chat-one">···</div><div class="pixel-chat chat-two">!</div></div><div class="home-card-content"><span class="home-tag">상황 체험</span><h2>사이버폭력 예방</h2><p>단톡방 속 선택이 대화를 바꿔요.</p><a class="home-card-link" href="${import.meta.env.BASE_URL}cyber/">활동 참여하기 <span aria-hidden="true">→</span></a></div></article>
  <article class="home-card home-detective"><div class="home-art detective-art"><img src="${import.meta.env.BASE_URL}detective/preview.svg" alt="픽셀 탐정과 사건 보드"><span class="activity-number" aria-hidden="true">03</span></div><div class="home-card-content"><span class="home-tag">단서 탐색과 표현</span><h2>사이버폭력 탐정단</h2><p>사라진 메시지 속 단서를 찾아라.</p><a class="home-card-link" href="${import.meta.env.BASE_URL}detective/">활동 참여하기 <span aria-hidden="true">→</span></a></div></article>
