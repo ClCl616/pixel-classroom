@@ -1,30 +1,32 @@
 import {supportCases,supportSteps,supportSelection,chooseSupport,supportReady} from './support.js';
 import {messages,reasons,reasonChoices,clueTypes,clueCount,writing,actions,responses,quizzes,newCase,inspect,evidenceReady,writingReady,planReady,escapeHtml as esc} from './data.js';
-import {createTypewriter,detectivePortrait,caseBoard,concepts,dialoguePages,evidencePages,stepDialogue,boardPageCount,boardPageFor} from './scenes.js';
+import {createTypewriter,detectivePortrait,caseBoard,concepts,dialoguePages,evidenceFeed,createTimedCue,stepDialogue,boardPageCount,boardPageFor} from './scenes.js';
 
 const app=document.querySelector('#app'),dialog=document.querySelector('#dialog'),dialogBody=document.querySelector('#dialog-body');
-const motion=window.matchMedia('(prefers-reduced-motion: reduce)'),typer=createTypewriter();
+const motion=window.matchMedia('(prefers-reduced-motion: reduce)'),typer=createTypewriter(),touchCue=createTimedCue();
 let state=newCase(),activeClue=null,returnFocus=null,pendingClue=null,story=null,leaving=false,speechNext=null,touchGuideShown=false;
 const stages=['사건 접수','단서 찾기','단서 정리','댓글 바꾸기','해결 계획','도움 연결','최종 확인','조사 완료'];
 const btn=(action,label,disabled=false,kind='primary')=>`<button class="${kind}" data-action="${action}" ${disabled?'disabled':''}>${label}</button>`;
 const title=(kicker,heading,description='')=>`<div class="page-heading"><span class="sr-only">${kicker}</span><h1 tabindex="-1">${heading}</h1>${kicker.match(/\d+ \/ \d+/)?.[0]?`<span class="scene-count">${kicker.match(/\d+ \/ \d+/)[0]}</span>`:''}${description?`<p>${description}</p>`:''}</div>`;
 const pager=(current,total,back,next)=>`<nav class="scene-pager" aria-label="장면 넘기기">${btn(back,'이전',current===0,'quiet')}<span>${current+1} / ${total}</span>${btn(next,'다음',current===total-1,'quiet')}</nav>`;
 function shell(content,footer='',kind=''){
-  typer.stop();speechNext=null;
+  const previousFeed=app.querySelector('.message-scroll');
+  if(previousFeed&&state.stage!==0)state.evidenceScroll[previousFeed.dataset.room]=previousFeed.scrollTop;
+  typer.stop();touchCue.stop();speechNext=null;
   app.innerHTML=`<div class="game scene-${kind}"><span class="sr-only">${stages[state.stage]}</span><section class="workspace">${content}</section>${footer?`<footer class="controls">${footer}</footer>`:''}</div>`;
   app.querySelector('h1')?.focus({preventScroll:true});
 }
 function go(stage){state.stage=stage;render();}
 function talk(lines,after){story={lines:dialoguePages(lines),index:0,read:new Set(),after};render();}
 function speech(text,speaker='회로 탐정'){
-  if(story)return `<div class="speech speech-directional" role="group" aria-label="대사 탐색"><span class="speaker-portrait">${speaker==='회로 탐정'?detectivePortrait:`<span class="avatar">${esc(speaker[0])}</span>`}</span><span class="speech-copy"><small>${esc(speaker)}</small><span class="spoken-line" id="speech-text"><span class="sr-only">${esc(text)}</span><span id="typed-line" aria-hidden="true"></span></span><span class="speech-hint"><span>◂ 왼쪽 · 이전</span><span class="next-hint">오른쪽 · 대사 완성 ▸</span></span></span><button class="speech-zone speech-left" data-action="speech-prev" aria-label="이전 대사" ${story.index===0?'disabled':''}></button><button class="speech-zone speech-right" data-action="speech-next" aria-label="대사 완성 또는 다음 대사" aria-describedby="speech-text"></button></div>`;
+  if(story)return `<div class="speech speech-directional" role="group" aria-label="대사 탐색"><span class="speaker-portrait">${speaker==='회로 탐정'?detectivePortrait:`<span class="avatar">${esc(speaker[0])}</span>`}</span><span class="speech-copy"><small>${esc(speaker)}</small><span class="spoken-line" id="speech-text"><span class="sr-only">${esc(text)}</span><span id="typed-line" aria-hidden="true"></span></span>${state.stage===0&&story.index===0&&!touchGuideShown?'<span class="speech-hint" hidden><span>◂ 왼쪽 · 이전</span><span class="next-hint">오른쪽 · 다음 ▸</span></span>':''}</span><button class="speech-zone speech-left" data-action="speech-prev" aria-label="이전 대사" ${story.index===0?'disabled':''}></button><button class="speech-zone speech-right" data-action="speech-next" aria-label="대사 완성 또는 다음 대사" aria-describedby="speech-text"></button></div>`;
   return `<button type="button" class="speech" data-action="speech-next"><span class="speaker-portrait">${speaker==='회로 탐정'?detectivePortrait:`<span class="avatar">${esc(speaker[0])}</span>`}</span><span class="speech-copy"><small>${esc(speaker)}</small><span class="spoken-line"><span class="sr-only">${esc(text)}</span><span id="typed-line" aria-hidden="true"></span></span><span class="speech-hint">눌러서 대사 완성 <span aria-hidden="true">▾</span></span></span></button>`;
 }
 function typeLine(text,next,label,instant=false){
   speechNext=next;
   typer.start(text,value=>{const el=document.querySelector('#typed-line');if(el)el.textContent=value;},()=>{
     const hint=app.querySelector(story?'.next-hint':'.speech-hint');if(hint)hint.textContent=`${label} ▸`;
-    if(story){story.read.add(story.index);if(!touchGuideShown){touchGuideShown=true;app.querySelector('.speech-directional')?.classList.add('teach-touch');}}
+    if(story){story.read.add(story.index);if(state.stage===0&&story.index===0&&!touchGuideShown){touchGuideShown=true;const cue=app.querySelector('.speech-hint');if(cue){app.querySelector('.speech-directional')?.classList.add('teach-touch');touchCue.show(cue);}}}
   },motion.matches||instant);
 }
 function renderStory(){
@@ -48,9 +50,13 @@ function renderFiles(){
   shell(`${title('CASE FILES','어디부터 살펴볼까?','두 파일에 남겨진 말을 조사해 보세요.')}<div class="file-selection"><button data-room="sns" class="case-folder"><span class="folder-tab">FILE A</span><span class="folder-symbol" aria-hidden="true">#</span><strong>SNS 게시물</strong><span>발표 사진에 달린 댓글</span><small>${state.visited.includes('sns')?'열람함':'새 파일'}</small></button><button data-room="chat" class="case-folder lilac"><span class="folder-tab">FILE B</span><span class="folder-symbol" aria-hidden="true">···</span><strong>반 단톡방</strong><span>연습 시간을 정하던 대화</span><small>${state.visited.includes('chat')?'열람함':'새 파일'}</small></button></div>`,`${btn('board',`사건 보드 · ${state.clues.length}/${clueCount}`,false,'quiet')}${btn('evidence-done','단서 정리',!evidenceReady(state))}`,'files');
 }
 function renderEvidence(){
-  if(!state.visited.includes(state.room))state.visited.push(state.room);
-  const sns=state.room==='sns',pages=evidencePages(state.room),page=state.evidencePage[state.room];
-  shell(`${title('EVIDENCE SEARCH','메시지에서 단서 찾기')}${fileButtons()}<section class="phone-file"><div class="file-head"><span class="avatar">${sns?'지':'3'}</span><div><strong>${sns?'지안의 발표 사진':'3학년 1반 · 발표 준비'}</strong><small>${sns?'어제 오후 4:10 · 가상 SNS':'오늘 오후 3:30 · 가상 단톡방'}</small></div></div>${sns&&page===0?'<div class="post-caption"><span class="mini-photo" aria-hidden="true">발표<br>끝!</span><p><b>지안</b> 오늘 발표 끝!<br>긴장했지만 끝까지 했다.</p></div>':''}<div class="message-scroll" tabindex="0" role="region" aria-label="조사할 대화"><div class="messages">${pages[page].map(m=>`<button class="message ${state.clues.includes(m.id)?'collected':''}" data-clue="${m.id}" aria-label="${m.name}: ${esc(m.text)}${state.clues.includes(m.id)?' · 보드에 연결됨':''}"><span class="avatar">${m.name[0]}</span><span><small>${m.name}</small><span class="bubble">${esc(m.text)}</span></span><span class="clue-mark" aria-hidden="true">${state.clues.includes(m.id)?'✓':'+'}</span></button>`).join('')}</div>${!sns&&page===pages.length-1?'<p class="left-room">지안이가 채팅방을 나갔습니다.</p>':''}</div>${pager(page,pages.length,'evidence-prev','evidence-next')}</section><p class="scene-tip">말을 눌러 조사해요. 다음 장의 대화도 살펴봐요.</p>`,`${btn('board',`사건 보드 · ${state.clues.length}/${clueCount}`,false,'quiet')}${btn('evidence-done','단서 정리',!evidenceReady(state))}`,'evidence');
+  const room=state.room,sns=room==='sns';
+  if(!state.visited.includes(room))state.visited.push(room);
+  const post=`<article class="social-post"><div class="post-author"><span class="avatar">지</span><span><strong>지안</strong><small>어제 오후 4:10</small></span><span class="post-menu" aria-hidden="true">···</span></div><div class="post-photo" role="img" aria-label="발표를 마친 지안의 가상 게시물 삽화"><span class="photo-board">MY FIRST<br>PRESENTATION</span><span class="photo-person" aria-hidden="true"></span><span class="photo-desk" aria-hidden="true"></span><span class="photo-sticker">발표 끝!</span></div><div class="post-copy"><span class="post-symbols" aria-hidden="true">♡ &nbsp; ▢ &nbsp; ↗</span><p><strong>지안</strong> 오늘 발표 끝! 긴장했지만 끝까지 했다.</p><small>댓글 ${messages.filter(m=>m.room==='sns').length}개 · 댓글을 눌러 조사해요</small></div></article>`;
+  shell(`${title('EVIDENCE SEARCH','메시지에서 단서 찾기')}${fileButtons()}<section class="phone-file ${sns?'social-file':'chat-file'}"><div class="feed-toolbar">${sns?'<strong>PIXEL SOCIAL</strong><span>가상 SNS</span>':'<span class="chat-room-icon" aria-hidden="true">···</span><div><strong>3학년 1반 · 발표 준비</strong><small>지안의 화면 · 가상 단톡방</small></div>'}</div><div class="message-scroll" data-room="${room}" tabindex="0" role="region" aria-label="${sns?'SNS 게시물과 댓글':'단톡방 대화'}">${sns?post:'<p class="chat-date">오늘 · 오후 3:30</p>'}<div class="messages">${evidenceFeed(room,state.clues)}</div>${sns?'<p class="feed-end">모든 댓글을 확인했어요.</p>':'<p class="left-room">지안이가 채팅방을 나갔습니다.</p>'}</div></section><p class="scene-tip">아래로 스크롤하며 읽고, 조사할 말을 눌러요.</p>`,`${btn('board',`사건 보드 · ${state.clues.length}/${clueCount}`,false,'quiet')}${btn('evidence-done','단서 정리',!evidenceReady(state))}`,'evidence');
+  const feed=app.querySelector('.message-scroll');
+  feed.scrollTop=state.evidenceScroll[room];
+
 }
 function renderBoard(){
   const m=messages.find(m=>m.id===state.latest);
@@ -144,8 +150,6 @@ app.addEventListener('click',event=>{
     app.querySelector('[data-action="speech-next"]')?.focus({preventScroll:true});
   }
   else if(action==='skip-story')endStory();
-  else if(action==='evidence-prev'&&state.evidencePage[state.room]>0){state.evidencePage[state.room]--;render();}
-  else if(action==='evidence-next'&&state.evidencePage[state.room]<evidencePages(state.room).length-1){state.evidencePage[state.room]++;render();}
   else if(action==='review-prev'&&state.planReviewPage>0){state.planReviewPage--;render();}
   else if(action==='review-next'&&state.planReviewPage<state.plan.length-1){state.planReviewPage++;render();}
   else if(action==='board-prev'&&state.boardPage>0){state.boardPage--;render();}
@@ -201,7 +205,7 @@ dialogBody.addEventListener('click',event=>{
   dialog.scrollTop=0;dialog.querySelector('h2').focus();
 });
 document.querySelector('#notes').onclick=()=>modal(`<span class="eyebrow">PRIVATE CASE NOTES</span><h2 id="dialog-title" tabindex="-1">나의 사건 수첩</h2>${notebook()}<p class="muted">선택과 문장은 이 페이지에서만 유지됩니다.</p>`);
-document.querySelector('#guide').onclick=()=>modal('<h2 id="dialog-title" tabindex="-1">탐정단 활동 안내</h2><p>파일 조사 → 사건 보드 연결 → 댓글 바꾸기 → 유형별 말과 행동 선택 → 해결 계획 → 최종 확인 순서로 진행해요. 약 20~25분 걸려요.</p><h3>회로와 함께 한 장면씩</h3><p>대사는 순서대로 나타나요. 말풍선 오른쪽을 누르면 대사가 완성되고, 다시 누르면 다음 대사나 조사로 넘어가요. 왼쪽을 누르면 이전 대사로 돌아가요. 이미 읽은 대사는 바로 표시해요. 첫 대사를 다 읽으면 좌우 안내가 한 번 움직여요. 키보드에서는 말풍선에 초점을 둔 뒤 Enter·Space 또는 좌우 방향키를 눌러요. 사건 보드에서는 말풍선 전체로 조사를 이어가요. “대사 건너뛰기”는 브리핑 전체를 넘겨요. 기기의 동작 감소 설정에서는 대사가 즉시 보여요.</p><h3>나만 보는 사건 수첩</h3><p>선택과 문장은 서버나 브라우저 저장소에 저장하지 않아요. 교사도 개인 결과나 완료 인원을 조회할 수 없어요. 종료·새로고침·페이지 이탈 시 지워져요.</p><h3>함께 이야기하기</h3><p>실제 친구의 이름이나 피해 경험, 개인 결과 공개를 요구하지 않고 가상 사건을 토의해요. 자동 글쓰기 평가나 점수·순위는 없어요.</p>');
+document.querySelector('#guide').onclick=()=>modal('<h2 id="dialog-title" tabindex="-1">탐정단 활동 안내</h2><p>파일 조사 → 사건 보드 연결 → 댓글 바꾸기 → 유형별 말과 행동 선택 → 해결 계획 → 최종 확인 순서로 진행해요. 약 20~25분 걸려요.</p><h3>회로와 함께 한 장면씩</h3><p>대사는 순서대로 나타나요. 말풍선 오른쪽을 누르면 대사가 완성되고, 다시 누르면 다음 대사나 조사로 넘어가요. 왼쪽을 누르면 이전 대사로 돌아가요. 이미 읽은 대사는 바로 표시해요. 처음 대사를 다 읽으면 좌우 안내가 3초 동안 나타나고 사라져요. 이후 대사에는 안내를 반복하지 않아요. SNS 댓글과 단톡방은 아래로 스크롤하며 조사해요. 키보드에서는 말풍선에 초점을 둔 뒤 Enter·Space 또는 좌우 방향키를 눌러요. 사건 보드에서는 말풍선 전체로 조사를 이어가요. “대사 건너뛰기”는 브리핑 전체를 넘겨요. 기기의 동작 감소 설정에서는 대사가 즉시 보여요.</p><h3>나만 보는 사건 수첩</h3><p>선택과 문장은 서버나 브라우저 저장소에 저장하지 않아요. 교사도 개인 결과나 완료 인원을 조회할 수 없어요. 종료·새로고침·페이지 이탈 시 지워져요.</p><h3>함께 이야기하기</h3><p>실제 친구의 이름이나 피해 경험, 개인 결과 공개를 요구하지 않고 가상 사건을 토의해요. 자동 글쓰기 평가나 점수·순위는 없어요.</p>');
 motion.addEventListener('change',()=>{if(motion.matches)typer.finish();});
 window.addEventListener('pagehide',()=>{leaving=true;typer.stop();pendingClue=null;story=null;if(dialog.open)dialog.close();dialogBody.innerHTML='';returnFocus=null;activeClue=null;state=newCase();render();});
 window.addEventListener('pageshow',()=>{leaving=false;});

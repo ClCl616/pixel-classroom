@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {newCase,inspect,evidenceReady,writingReady,planReady,escapeHtml,messages,actions,clueCount,clueMessages,reasonChoices,clueTypes} from '../public/detective/data.js';
-import {createTypewriter,caseBoard,dialoguePages,evidencePages,stepDialogue,boardPageCount,boardPageFor} from '../public/detective/scenes.js';
+import {createTypewriter,caseBoard,dialoguePages,evidenceFeed,createTimedCue,stepDialogue,boardPageCount,boardPageFor} from '../public/detective/scenes.js';
 
 test('short dialogue pages preserve all words, punctuation and speakers',()=>{
   const lines=['반 단톡방에서 메시지가 멈췄어. 무슨 일이 있었는지 함께 살펴볼까?',{speaker:'지안',text:'내 얘기를 다른 방에서도 하는 것 같아. 그만하라고 말하면 더 놀릴까 봐 무서워.'}];
@@ -13,16 +13,25 @@ test('short dialogue pages preserve all words, punctuation and speakers',()=>{
   assert.deepEqual(dialoguePages([]),[]);
 });
 
-test('evidence pages keep every message and preserve the exclusion exchange in one scene',()=>{
+test('continuous evidence feeds retain every message in order and mark only collected clues',()=>{
   for(const room of ['sns','chat']){
-    const pages=evidencePages(room);
-    assert.equal(pages.length,4);
-    assert.deepEqual(pages.flat().map(m=>m.id),messages.filter(m=>m.room===room).map(m=>m.id));
-    assert.ok(pages.every(p=>p.length<=2));
+    const html=evidenceFeed(room,['a1']);
+    const ids=[...html.matchAll(/data-clue="([^"]+)"/g)].map(match=>match[1]);
+    assert.deepEqual(ids,messages.filter(m=>m.room===room).map(m=>m.id));
+    assert.equal((html.match(/ · 보드에 연결됨/g)||[]).length,room==='sns'?1:0);
+    assert.ok(!html.includes('data-action="evidence-next"'));
   }
-  assert.deepEqual(evidencePages('chat')[1].map(m=>m.id),['b3','b4']);
-  assert.deepEqual(evidencePages('chat')[3].map(m=>m.id),['b5']);
-  const a=newCase(),b=newCase();a.evidencePage.chat=1;assert.equal(b.evidencePage.chat,0);
+  assert.ok(evidenceFeed('chat').includes('from-jian'));
+  const a=newCase(),b=newCase();a.evidenceScroll.chat=120;assert.equal(b.evidenceScroll.chat,0);
+});
+
+test('first dialogue cue is visible for 3000ms and cancels pending work on scene exit',()=>{
+  let pending=null,delay=0,removed=0,cancelled=0;
+  const cue=createTimedCue({schedule:(fn,ms)=>{pending=fn;delay=ms;return 1;},cancel:()=>{pending=null;cancelled++;}});
+  const element={hidden:true,remove:()=>removed++};
+  cue.show(element);assert.equal(element.hidden,false);assert.equal(delay,3000);assert.equal(removed,0);
+  pending();assert.equal(removed,1);
+  cue.show(element);cue.stop();assert.equal(pending,null);assert.equal(cancelled,1);
 });
 
 test('evidence requires both files and all seven correctly classified clues, never supportive messages',()=>{

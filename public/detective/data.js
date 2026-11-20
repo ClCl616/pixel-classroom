@@ -44,7 +44,7 @@ export const quizzes = [
   {question:'안전하게 확보할 수 있는 필요한 기록을 남기는 것은 도움을 요청할 때 도움이 된다.', answer:true, feedback:'시간과 대화 맥락을 함께 남기고, 널리 퍼뜨리지 않아요.'},
   {question:'재미로 게시물을 공유하거나 조롱 댓글을 다는 행동도 피해를 확산시킬 수 있다.', answer:true, feedback:'직접 시작하지 않았더라도 확산에 참여하는 행동이 될 수 있어요.'}
 ];
-export function newCase() { return {stage:0, room:'sns', view:'files', latest:null, boardPage:0, concept:0, actionPage:0, supportMode:true, supportPage:0, supportFeedback:false, supportChoices:Array(supportSteps.length).fill(null), planReview:false, planReviewPage:0, evidencePage:{sns:0,chat:0}, reportPage:0, visited:[], clues:[], drafts:['',''], reviews:[[false,false],[false,false]], saved:[false,false], mission:0, preview:false, plan:[], response:null, quiz:0, answers:[], pledge:''}; }
+export function newCase() { return {stage:0, room:'sns', view:'files', latest:null, boardPage:0, concept:0, actionPage:0, supportMode:true, supportPage:0, supportFeedback:false, supportChoices:Array(supportSteps.length).fill(null), planReview:false, planReviewPage:0, evidenceScroll:{sns:0,chat:0}, reportPage:0, visited:[], clues:[], drafts:['',''], reviews:[[false,false],[false,false]], saved:[false,false], mission:0, preview:false, plan:[], response:null, quiz:0, answers:[], pledge:''}; }
 export function inspect(state,id,reason) {
   const item=messages.find(m=>m.id===id);
   if(!item || item.reason!==reason)return false;

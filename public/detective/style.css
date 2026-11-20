@@ -89,3 +89,29 @@ button.speech:active:not(:disabled){transform:none}
 .option-letter{font:16px monospace;color:#52695a;flex:none}.support-options button[aria-pressed=true]{background:#cce4c7}
 .support-feedback{margin:auto 0}.support-feedback p{font-size:19px;line-height:1.8}
 @media(max-width:680px){.scene-support .workspace{gap:10px}.support-question{font-size:16px}.support-situation{font-size:15px;padding:10px 12px}.support-options{gap:8px}.support-options button{font-size:15px;padding:12px;gap:10px;min-height:62px}.support-feedback{padding:18px}.support-feedback blockquote{font-size:16px}.support-feedback p{font-size:16px;line-height:1.7}}
+
+/* The first dialogue cue disappears completely after three seconds. */
+.speech-directional .speech-hint[hidden]{display:none}
+/* Familiar social feed and chat layouts; only the file contents scroll. */
+.scene-evidence .workspace{overflow:hidden}.scene-evidence .phone-file{flex:1;min-height:0;height:auto}
+.scene-evidence .message-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;touch-action:pan-y}
+.feed-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:2px solid #244e41;flex:none}
+.feed-toolbar>strong{font:700 19px monospace;letter-spacing:1px}.feed-toolbar>span{font-size:11px}.feed-toolbar small{display:block;font-size:11px;margin-top:4px}
+.social-file{background:#fffdf6}.social-file .feed-toolbar{background:#fffdf6}.social-file .messages{padding:0;gap:0}
+.post-author{display:flex;align-items:center;gap:10px;padding:14px 16px}.post-author small{display:block;font-size:11px;margin-top:3px;color:#647061}.post-menu{margin-left:auto}
+.post-photo{height:190px;background:#c8d9bb;position:relative;overflow:hidden;border-block:1px solid #9cab91}
+.photo-board{position:absolute;left:12%;top:20px;background:#244e41;color:#edf2df;border:6px solid #b99e76;padding:12px;font:16px/1.6 monospace;width:68%;height:110px}
+.photo-person{position:absolute;left:29%;bottom:28px;width:34px;height:54px;background:#9e83bb;box-shadow:0 -25px 0 -3px #e6c49c,0 -36px 0 -3px #493f34}
+.photo-desk{position:absolute;left:18%;bottom:0;width:58%;height:42px;background:#bb9364;border:5px solid #755b40}.photo-sticker{position:absolute;right:10px;top:12px;background:#f8e7a9;padding:8px;border:2px solid #244e41;transform:rotate(6deg);font-size:14px}
+.post-copy{padding:12px 16px;border-bottom:1px solid #d8ddce}.post-copy p{font-size:15px;line-height:1.6;margin:8px 0}.post-copy small{font-size:11px;color:#647061}.post-symbols{font-size:24px}
+.social-file .social-comment{background:transparent;border:0;border-bottom:1px solid #e4e7dc;box-shadow:none;padding:16px;align-items:flex-start;text-align:left;font-weight:400;gap:10px;font-size:16px;flex:none}
+.message-copy{min-width:0;flex:1}.social-comment .bubble{padding:0;background:none;border:0}.message-meta{display:block;font-size:10px;color:#647061;margin-top:8px}.social-comment small{font-size:12px;font-weight:700;margin-bottom:5px}
+.social-file .social-comment.collected{background:#edf3df}.social-comment .clue-mark{align-self:flex-start}.feed-end{text-align:center;color:#647061;font-size:12px;padding:18px}
+.chat-file{background:#dce4d5}.chat-file .feed-toolbar{background:#cfdbc7;justify-content:flex-start}.chat-room-icon{display:grid;place-items:center;width:36px;height:36px;border:2px solid #244e41;background:#f7efd0;font-size:22px!important}
+.chat-date{font-size:11px;text-align:center;margin:18px auto;color:#526552}.chat-file .messages{padding:12px;gap:18px}
+.chat-file .chat-message{background:transparent;border:0;box-shadow:none;padding:0;align-items:flex-start;gap:8px;text-align:left;font-size:16px;font-weight:400;flex:none;width:100%}
+.chat-message .message-copy{max-width:78%}.chat-message small{font-size:11px;margin-bottom:5px}.chat-message .bubble{display:block;background:#fffdf6;border:1px solid #8a9d82;border-radius:0 8px 8px 8px;padding:10px 12px;line-height:1.6}
+.chat-message.from-jian{justify-content:flex-end}.chat-message.from-jian>.avatar{display:none}.chat-message.from-jian .message-copy{text-align:right}.chat-message.from-jian .bubble{background:#f6e7a9;border-radius:8px 0 8px 8px;text-align:left}.chat-message .clue-mark{align-self:center}.chat-message.collected .bubble{border:2px solid #42664f;background:#e6f0d5}
+.chat-file .chat-message:hover:not(:disabled){background:transparent}.chat-file .left-room{text-align:center;background:#c5d1bf;border-radius:4px;padding:8px;margin:14px 20px 24px;font-size:11px}
+@media(max-width:680px){.feed-toolbar{padding:10px 12px}.feed-toolbar>strong{font-size:17px}.feed-toolbar strong{font-size:14px}.social-file .social-comment{font-size:15px;padding:14px 12px}.chat-file .chat-message{font-size:15px}.post-photo{height:174px}.scene-evidence .phone-file{min-height:0}}
+@media(max-height:450px){.scene-evidence .workspace{overflow:hidden}.scene-evidence .phone-file{flex:1;min-height:0;height:auto}.scene-evidence .message-scroll{overflow-y:auto}.scene-evidence .scene-tip{display:none}.feed-toolbar{padding:6px 12px}}

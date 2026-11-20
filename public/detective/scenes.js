@@ -17,10 +17,16 @@ export function dialoguePages(lines,limit=42){
   });
 }
 
-export function evidencePages(room){
-  const items=messages.filter(m=>m.room===room);
-  // Keep exclusion and the agreeing reply together; the next page shows its impact.
-  return Array.from({length:Math.ceil(items.length/2)},(_,i)=>items.slice(i*2,i*2+2));
+// Each file is one continuous, chronological feed; unknown clues stay unmarked.
+export function evidenceFeed(room,clues=[]){
+  return messages.filter(m=>m.room===room).map((m,index)=>`<button class="message ${room==='sns'?'social-comment':'chat-message'} ${m.name==='지안'?'from-jian':''} ${clues.includes(m.id)?'collected':''}" data-clue="${m.id}" aria-label="${esc(m.name)}: ${esc(m.text)}${clues.includes(m.id)?' · 보드에 연결됨':''}"><span class="avatar" aria-hidden="true">${m.name[0]}</span><span class="message-copy"><small>${m.name}</small><span class="bubble">${esc(m.text)}</span><span class="message-meta">${room==='sns'?'어제 · 댓글':`오후 3:${String(30+index).padStart(2,'0')}`}</span></span><span class="clue-mark" aria-hidden="true">${clues.includes(m.id)?'✓':''}</span></button>`).join('');
+}
+
+// Cancel on scene exit so an old cue cannot change a new dialogue screen.
+export function createTimedCue({schedule=setTimeout,cancel=clearTimeout}={}){
+  let timer=null;
+  function stop(){if(timer!==null)cancel(timer);timer=null;}
+  return {stop,show(element){stop();element.hidden=false;timer=schedule(()=>{element.remove();timer=null;},3000);}};
 }
 
 // One owned timer: leaving a scene or revealing a line cancels pending work.
