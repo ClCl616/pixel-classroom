@@ -48,3 +48,13 @@
  .scene-story .story-illustration{display:none}.scene-story .speech{min-height:160px}.scene-evidence .phone-file{min-height:330px;height:auto;flex:none}
  .scene-evidence .message-scroll{overflow:visible}.scene-evidence .phone-file>.scene-pager{flex:none}.controls{padding:8px 12px 10px}
 }
+
+/* The whole speech bubble is the primary touch/keyboard target. */
+button.speech{width:100%;text-align:left;font-weight:400;cursor:pointer;touch-action:manipulation}
+button.speech:hover:not(:disabled){background:#edf2df;border-color:#42664f}
+button.speech:active:not(:disabled){transform:none}
+.speech-copy,.spoken-line{display:block}.speech-copy{min-width:0;flex:1}
+.speech-hint{display:block;text-align:right;font-size:13px;line-height:1.5;color:#46634d;margin-top:8px}
+.dialogue-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;width:100%;color:#52695a}
+.dialogue-tools .line-count{font-size:12px;margin:0}.dialogue-tools button{font-size:12px;min-height:44px;padding:8px}
+@media(max-width:680px){.scene-story .workspace{gap:10px}.speech-hint{font-size:12px}.scene-story .spoken-line{min-height:3.3em}}

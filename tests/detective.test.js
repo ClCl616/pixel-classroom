@@ -103,3 +103,19 @@ test('dialogue reveal, reduced motion and scene exit cancel every pending charac
   typer.start('종료 뒤 남으면 안 되는 말',value=>outputs.push(value));
   typer.stop();assert.equal(timers.size,0);assert.equal(typer.isTyping(),false);
 });
+
+test('speech activation reveals first, then advances once, including instant dialogue',()=>{
+  const timers=new Map();let id=0,text='',advances=0;
+  const typer=createTypewriter({schedule:fn=>{timers.set(++id,fn);return id;},cancel:key=>timers.delete(key)});
+  const next=()=>{advances++;typer.start('다음 대사',value=>text=value);};
+  typer.start('아직 쓰는 중인 대사',value=>text=value);
+  typer.advance(next);
+  assert.equal(text,'아직 쓰는 중인 대사');assert.equal(advances,0);assert.equal(timers.size,0);
+  typer.advance(next);
+  assert.equal(advances,1);assert.equal(text,'');assert.equal(timers.size,1);
+  typer.advance(next);
+  assert.equal(text,'다음 대사');assert.equal(advances,1);
+  typer.start('즉시 표시',value=>text=value,()=>{},true);
+  typer.advance(next);assert.equal(advances,2);
+  typer.stop();assert.equal(timers.size,0);
+});

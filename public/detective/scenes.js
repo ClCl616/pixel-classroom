@@ -35,7 +35,7 @@ export function createTypewriter({schedule=setTimeout,cancel=clearTimeout}={}) {
     const tick=()=>{if(token!==generation)return;position=Math.min(chars.length,position+2);write(chars.slice(0,position).join(''));if(position===chars.length){timer=null;const callback=done;done=()=>{};callback();}else timer=schedule(tick,32);};
     timer=schedule(tick,32);
   }
-  return {start,stop,finish,isTyping:()=>timer!==null};
+  return {start,stop,finish,isTyping:()=>timer!==null,advance:onNext=>{if(timer!==null)finish();else onNext();}};
 }
 
 export const detectivePortrait=`<svg class="detective-portrait" viewBox="0 0 80 80" aria-hidden="true" shape-rendering="crispEdges"><path fill="#173d37" d="M20 4h36v8h8v12h8v8H8v-8h8V12h4zM16 32h48v32H16zM24 64h32v12H24z"/><path fill="#d4ae78" d="M24 8h28v12H24zM16 24h48v4H16z"/><path fill="#79d6a7" d="M20 36h40v24H20z"/><path fill="#fff6da" d="M24 40h32v16H24z"/><path fill="#173d37" d="M28 44h6v6h-6zM46 44h6v6h-6z"/><path fill="#f2c4a5" d="M16 52h8v4h-8zM56 52h8v4h-8z"/><path fill="#b5e1bb" d="M28 64h24v8H28z"/><path fill="#173d37" d="M52 53h12v4h4v12h-4v4h-12v-4h-4V57h4zM64 69h8v8h-8z"/><path fill="#d7cbee" d="M54 57h8v10h-8z"/></svg>`;

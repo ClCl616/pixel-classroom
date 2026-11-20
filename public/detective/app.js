@@ -3,26 +3,33 @@ import {createTypewriter,detectivePortrait,caseBoard,concepts,dialoguePages,evid
 
 const app=document.querySelector('#app'),dialog=document.querySelector('#dialog'),dialogBody=document.querySelector('#dialog-body');
 const motion=window.matchMedia('(prefers-reduced-motion: reduce)'),typer=createTypewriter();
-let state=newCase(),activeClue=null,returnFocus=null,pendingClue=null,story=null,leaving=false;
+let state=newCase(),activeClue=null,returnFocus=null,pendingClue=null,story=null,leaving=false,speechNext=null;
 const stages=['사건 접수','단서 찾기','단서 정리','댓글 바꾸기','해결 계획','도움 연결','최종 확인','조사 완료'];
 const btn=(action,label,disabled=false,kind='primary')=>`<button class="${kind}" data-action="${action}" ${disabled?'disabled':''}>${label}</button>`;
 const title=(kicker,heading,description='')=>`<div class="page-heading"><span class="sr-only">${kicker}</span><h1 tabindex="-1">${heading}</h1>${kicker.match(/\d+ \/ \d+/)?.[0]?`<span class="scene-count">${kicker.match(/\d+ \/ \d+/)[0]}</span>`:''}${description?`<p>${description}</p>`:''}</div>`;
 const pager=(current,total,back,next)=>`<nav class="scene-pager" aria-label="장면 넘기기">${btn(back,'이전',current===0,'quiet')}<span>${current+1} / ${total}</span>${btn(next,'다음',current===total-1,'quiet')}</nav>`;
 function shell(content,footer='',kind=''){
-  typer.stop();
+  typer.stop();speechNext=null;
   app.innerHTML=`<div class="game scene-${kind}"><span class="sr-only">${stages[state.stage]}</span><section class="workspace">${content}</section>${footer?`<footer class="controls">${footer}</footer>`:''}</div>`;
   app.querySelector('h1')?.focus({preventScroll:true});
 }
 function go(stage){state.stage=stage;render();}
 function talk(lines,after){story={lines:dialoguePages(lines),index:0,after};render();}
 function speech(text,speaker='회로 탐정'){
-  return `<aside class="speech"><div class="speaker-portrait">${speaker==='회로 탐정'?detectivePortrait:`<span class="avatar">${speaker[0]}</span>`}</div><div class="speech-copy"><small>${speaker}</small><p class="spoken-line"><span class="sr-only">${esc(text)}</span><span id="typed-line" aria-hidden="true"></span></p></div></aside>`;
+  return `<button type="button" class="speech" data-action="speech-next"><span class="speaker-portrait">${speaker==='회로 탐정'?detectivePortrait:`<span class="avatar">${esc(speaker[0])}</span>`}</span><span class="speech-copy"><small>${esc(speaker)}</small><span class="spoken-line"><span class="sr-only">${esc(text)}</span><span id="typed-line" aria-hidden="true"></span></span><span class="speech-hint">눌러서 대사 완성 <span aria-hidden="true">▾</span></span></span></button>`;
 }
-function typeLine(text,done=()=>{}){typer.start(text,value=>{const el=document.querySelector('#typed-line');if(el)el.textContent=value;},done,motion.matches);}
+function typeLine(text,next,label){
+  speechNext=next;
+  typer.start(text,value=>{const el=document.querySelector('#typed-line');if(el)el.textContent=value;},()=>{
+    const hint=app.querySelector('.speech-hint');if(hint)hint.innerHTML=`${label} <span aria-hidden="true">▸</span>`;
+  },motion.matches);
+}
 function renderStory(){
   const line=story.lines[story.index],text=typeof line==='string'?line:line.text,speaker=typeof line==='string'?'회로 탐정':line.speaker;
-  shell(`${title('DETECTIVE RADIO',speaker==='회로 탐정'?'회로 탐정의 브리핑':'새 메시지 도착')}<div class="story-illustration"><img src="preview.svg" alt="단서를 연결하는 픽셀 탐정의 사건 보드"><span class="radio-light" aria-hidden="true"></span></div>${speech(text,speaker)}<p class="line-count sr-only">대화 ${story.index+1} / ${story.lines.length}</p>`,`${btn('skip-story','대사 건너뛰기',false,'quiet')}${btn('story-next','바로 보기')}`,'story');
-  typeLine(text,()=>{const next=app.querySelector('[data-action="story-next"]');if(next)next.textContent=story.index===story.lines.length-1?'조사 계속하기':'다음 대사';});
+  shell(`${title('DETECTIVE RADIO',speaker==='회로 탐정'?'회로 탐정의 브리핑':'새 메시지 도착')}<div class="story-illustration"><img src="preview.svg" alt="단서를 연결하는 픽셀 탐정의 사건 보드"><span class="radio-light" aria-hidden="true"></span></div>${speech(text,speaker)}<div class="dialogue-tools"><span class="line-count">대화 ${story.index+1} / ${story.lines.length}</span>${btn('skip-story','대사 건너뛰기',false,'text-button')}</div>`,'','story');
+  typeLine(text,()=>{
+    if(story.index<story.lines.length-1){story.index++;render();}else endStory();
+  },story.index===story.lines.length-1?'눌러서 조사 계속':'눌러서 다음 대사');
 }
 function endStory(){const after=story.after;story=null;typer.stop();after();}
 function modal(content){typer.finish();returnFocus=document.activeElement;dialogBody.innerHTML=content;dialog.querySelector('form button').textContent='닫기';dialog.showModal();dialog.querySelector('h2')?.focus();}
@@ -45,8 +52,8 @@ function renderEvidence(){
 function renderBoard(){
   const m=messages.find(m=>m.id===state.latest);
   const line=m?(state.clues.length===4?'네 단서가 연결됐어. 이제 함께 정리해 보자!':`${m.room==='sns'?'외모를 비하하는 말':'친구를 제외하는 말'}이 연결됐어. 다른 말도 조사해 보자.`):'단서들이 사건과 연결됐어. 카드를 누르면 다시 읽을 수 있어.';
-  shell(`${title(m?'NEW CONNECTION':'EVIDENCE BOARD',m?'새 단서가 연결됐어!':'우리의 사건 보드')}${caseBoard(state.clues,state.latest)}${speech(line)}`,`${btn('resume-evidence','조사 계속',false,'quiet')}${btn('evidence-done','단서 정리',!evidenceReady(state))}`,'board');
-  typeLine(line);state.latest=null;
+  shell(`${title(m?'NEW CONNECTION':'EVIDENCE BOARD',m?'새 단서가 연결됐어!':'우리의 사건 보드')}${caseBoard(state.clues,state.latest)}${speech(line)}`,evidenceReady(state)?btn('resume-evidence','파일 다시 보기',false,'text-button'):'','board');
+  typeLine(line,()=>{if(evidenceReady(state))summarizeEvidence();else{state.view='evidence';render();}},evidenceReady(state)?'눌러서 단서 정리':'눌러서 조사 계속');state.latest=null;
 }
 function renderConcept(){const c=concepts[state.concept];
   shell(`${title(`CASE NOTES · ${state.concept+1} / 3`,'단서의 의미를 읽어 보자')}<article class="paper concept-card ${c.color}"><span class="label">${c.tag}</span><h2>${c.name}</h2><p>${c.body}</p><blockquote>${c.example}</blockquote></article>`,`${btn('concept-back',state.concept?'이전':'사건 보드',false,'quiet')}${btn('concept-next',state.concept===2?'댓글 바꾸기':'다음 카드')}`,'concept');
@@ -98,6 +105,7 @@ function openClue(id){
   const m=messages.find(m=>m.id===id);if(!m)return;activeClue=id;
   modal(clueQuestion(m));
 }
+function summarizeEvidence(){state.concept=0;talk(['네 개의 단서가 하나의 사건으로 이어졌어. 외모를 비하하는 말, 그리고 특정 친구를 제외하는 행동이 보이지?','이제 단서의 의미를 한 장씩 확인하고, 우리가 직접 말을 바꿔 보자.'],()=>go(2));}
 function showBoard(){state.view='board';state.latest=null;go(1);}
 app.addEventListener('click',event=>{
   const target=event.target.closest('button');if(!target||target.disabled)return;
@@ -110,7 +118,10 @@ app.addEventListener('click',event=>{
   if(target.dataset.answer!==undefined){if(state.answers[state.quiz]!==undefined)return;state.answers[state.quiz]=target.dataset.answer==='true';render();return;}
   const action=target.dataset.action;
   if(action==='start')talk(['반 단톡방에서 지안이의 메시지가 멈췄어. 무슨 일이 있었는지 함께 살펴볼까?','우리가 찾는 건 친구의 잘못이 아니야. 친구를 힘들게 한 말과 행동을 찾는 거야.','SNS 게시물과 단톡방을 조사해 보자. 단서를 찾으면 사건 보드에 연결할게.'],()=>go(1));
-  else if(action==='story-next'){if(typer.isTyping())typer.finish();else if(story.index<story.lines.length-1){story.index++;render();}else endStory();}
+  else if(action==='speech-next'&&speechNext){
+    typer.advance(speechNext);
+    app.querySelector('[data-action="speech-next"]')?.focus({preventScroll:true});
+  }
   else if(action==='skip-story')endStory();
   else if(action==='evidence-prev'&&state.evidencePage[state.room]>0){state.evidencePage[state.room]--;render();}
   else if(action==='evidence-next'&&state.evidencePage[state.room]<evidencePages(state.room).length-1){state.evidencePage[state.room]++;render();}
@@ -118,7 +129,7 @@ app.addEventListener('click',event=>{
   else if(action==='review-next'&&state.planReviewPage<state.plan.length-1){state.planReviewPage++;render();}
   else if(action==='board')showBoard();
   else if(action==='resume-evidence'){state.view='evidence';render();}
-  else if(action==='evidence-done'&&evidenceReady(state)){state.concept=0;talk(['네 개의 단서가 하나의 사건으로 이어졌어. 외모를 비하하는 말, 그리고 특정 친구를 제외하는 행동이 보이지?','이제 단서의 의미를 한 장씩 확인하고, 우리가 직접 말을 바꿔 보자.'],()=>go(2));}
+  else if(action==='evidence-done'&&evidenceReady(state))summarizeEvidence();
   else if(action==='concept-back'){if(state.concept){state.concept--;render();}else showBoard();}
   else if(action==='concept-next'){if(state.concept<2){state.concept++;render();}else{state.mission=0;state.preview=false;talk(['이번에는 네가 말할 차례야. 외모를 평가하는 대신 친구의 노력과 참여를 존중하는 말을 써 보자.','자동으로 정답을 판정하지 않아. 네 문장을 읽고, 친구를 존중하는 말인지 직접 확인해 줘.'],()=>go(3));}}
   else if(action==='hint'){const w=writing[state.mission];modal(`<h2 id="dialog-title" tabindex="-1">말문을 여는 힌트</h2><ul>${w.hints.map(h=>`<li>${h}</li>`).join('')}</ul><p>${w.example}</p>${btn('example','예시를 보고 바꿔 쓰기')}`);}
@@ -157,7 +168,7 @@ dialogBody.addEventListener('click',event=>{
   dialog.scrollTop=0;dialog.querySelector('h2').focus();
 });
 document.querySelector('#notes').onclick=()=>modal(`<span class="eyebrow">PRIVATE CASE NOTES</span><h2 id="dialog-title" tabindex="-1">나의 사건 수첩</h2>${notebook()}<p class="muted">선택과 문장은 이 페이지에서만 유지됩니다.</p>`);
-document.querySelector('#guide').onclick=()=>modal('<h2 id="dialog-title" tabindex="-1">탐정단 활동 안내</h2><p>파일 조사 → 사건 보드 연결 → 댓글 바꾸기 → 해결 계획 → 최종 확인 순서로 진행해요. 약 12~15분 걸려요.</p><h3>회로와 함께 한 장면씩</h3><p>대사는 순서대로 나타나요. “바로 보기”는 현재 대사를 완성하고, “대사 건너뛰기”는 다음 조사로 넘어가요. 기기의 동작 감소 설정에서는 대사가 즉시 보여요.</p><h3>나만 보는 사건 수첩</h3><p>선택과 문장은 서버나 브라우저 저장소에 저장하지 않아요. 교사도 개인 결과나 완료 인원을 조회할 수 없어요. 종료·새로고침·페이지 이탈 시 지워져요.</p><h3>함께 이야기하기</h3><p>실제 친구의 이름이나 피해 경험, 개인 결과 공개를 요구하지 않고 가상 사건을 토의해요. 자동 글쓰기 평가나 점수·순위는 없어요.</p>');
+document.querySelector('#guide').onclick=()=>modal('<h2 id="dialog-title" tabindex="-1">탐정단 활동 안내</h2><p>파일 조사 → 사건 보드 연결 → 댓글 바꾸기 → 해결 계획 → 최종 확인 순서로 진행해요. 약 12~15분 걸려요.</p><h3>회로와 함께 한 장면씩</h3><p>대사는 순서대로 나타나요. 말풍선을 누르면 현재 대사가 바로 완성되고, 다시 누르면 다음 대사나 조사로 넘어가요. 키보드에서는 말풍선에 초점을 둔 뒤 Enter 또는 Space를 눌러요. “대사 건너뛰기”는 브리핑 전체를 넘겨요. 기기의 동작 감소 설정에서는 대사가 즉시 보여요.</p><h3>나만 보는 사건 수첩</h3><p>선택과 문장은 서버나 브라우저 저장소에 저장하지 않아요. 교사도 개인 결과나 완료 인원을 조회할 수 없어요. 종료·새로고침·페이지 이탈 시 지워져요.</p><h3>함께 이야기하기</h3><p>실제 친구의 이름이나 피해 경험, 개인 결과 공개를 요구하지 않고 가상 사건을 토의해요. 자동 글쓰기 평가나 점수·순위는 없어요.</p>');
 motion.addEventListener('change',()=>{if(motion.matches)typer.finish();});
 window.addEventListener('pagehide',()=>{leaving=true;typer.stop();pendingClue=null;story=null;if(dialog.open)dialog.close();dialogBody.innerHTML='';returnFocus=null;activeClue=null;state=newCase();render();});
 window.addEventListener('pageshow',()=>{leaving=false;});
