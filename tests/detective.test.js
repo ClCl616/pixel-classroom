@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {newCase,inspect,evidenceReady,writingReady,planReady,escapeHtml,messages,actions} from '../public/detective/data.js';
-import {createTypewriter,caseBoard,dialoguePages,evidencePages,stepDialogue} from '../public/detective/scenes.js';
+import {newCase,inspect,evidenceReady,writingReady,planReady,escapeHtml,messages,actions,clueCount,clueMessages,reasonChoices,clueTypes} from '../public/detective/data.js';
+import {createTypewriter,caseBoard,dialoguePages,evidencePages,stepDialogue,boardPageCount,boardPageFor} from '../public/detective/scenes.js';
 
 test('short dialogue pages preserve all words, punctuation and speakers',()=>{
   const lines=['반 단톡방에서 메시지가 멈췄어. 무슨 일이 있었는지 함께 살펴볼까?',{speaker:'지안',text:'내 얘기를 다른 방에서도 하는 것 같아. 그만하라고 말하면 더 놀릴까 봐 무서워.'}];
@@ -16,16 +16,16 @@ test('short dialogue pages preserve all words, punctuation and speakers',()=>{
 test('evidence pages keep every message and preserve the exclusion exchange in one scene',()=>{
   for(const room of ['sns','chat']){
     const pages=evidencePages(room);
-    assert.equal(pages.length,room==='sns'?2:3);
+    assert.equal(pages.length,4);
     assert.deepEqual(pages.flat().map(m=>m.id),messages.filter(m=>m.room===room).map(m=>m.id));
     assert.ok(pages.every(p=>p.length<=2));
   }
   assert.deepEqual(evidencePages('chat')[1].map(m=>m.id),['b3','b4']);
-  assert.deepEqual(evidencePages('chat')[2].map(m=>m.id),['b5']);
+  assert.deepEqual(evidencePages('chat')[3].map(m=>m.id),['b5']);
   const a=newCase(),b=newCase();a.evidencePage.chat=1;assert.equal(b.evidencePage.chat,0);
 });
 
-test('evidence requires both files and four correctly classified clues, never supportive messages',()=>{
+test('evidence requires both files and all seven correctly classified clues, never supportive messages',()=>{
   const state=newCase();
   assert.equal(inspect(state,'a1',1),false);
   assert.deepEqual(state.clues,[]);
@@ -35,7 +35,7 @@ test('evidence requires both files and four correctly classified clues, never su
     assert.equal(inspect(state,m.id,m.reason),true);
     inspect(state,m.id,m.reason);
   }
-  assert.equal(state.clues.length,4);
+  assert.equal(state.clues.length,7);
   assert.equal(evidenceReady(state),false);
   state.visited=['sns','chat'];
   assert.equal(evidenceReady(state),true);
@@ -78,7 +78,7 @@ test('the board connects only discovered clues and animates only the newest pin'
   let html=caseBoard([]);
   assert.equal((html.match(/class="thread /g)||[]).length,0);
   assert.ok(!html.includes('표정 왜 저래'));
-  html=caseBoard(['a1','b4'],'b4');
+  html=Array.from({length:boardPageCount},(_,page)=>caseBoard(['a1','b4'],'b4',page)).join('');
   assert.equal((html.match(/class="thread /g)||[]).length,2);
   assert.equal((html.match(/new-thread/g)||[]).length,1);
   assert.equal((html.match(/new-pin/g)||[]).length,1);
@@ -129,4 +129,21 @@ test('dialogue navigation clamps the start, revisits read lines and ends only af
   stepDialogue(story,1);stepDialogue(story,1);
   assert.equal(story.index,2);assert.equal(stepDialogue(story,1),false);assert.equal(story.index,2);
   assert.equal(stepDialogue(story,-1),true);assert.equal(story.index,1);
+});
+
+
+test('expanded clues cover five types with four valid reasons and paginated private board pins',()=>{
+  assert.equal(clueCount,7);assert.equal(boardPageCount,2);
+  assert.deepEqual([...new Set(clueMessages.map(m=>m.reason))].sort(),[0,1,4,5,6]);
+  for(const m of messages){
+    const options=reasonChoices(m);assert.equal(options.length,4);assert.equal(new Set(options).size,4);assert.ok(options.includes(m.reason));
+    if(!m.clue)continue;
+    assert.ok(clueTypes[m.reason]);
+    const page=boardPageFor(m.id),html=caseBoard([m.id],m.id,page);
+    assert.ok(html.includes(`data-board-note="${m.id}"`));assert.equal((html.match(/new-thread/g)||[]).length,1);
+    assert.ok(!caseBoard([],null,page).includes(m.boardText||m.text));
+    assert.ok(!caseBoard([m.id],m.id,1-page).includes(`data-board-note="${m.id}"`));
+    const state=newCase();state.visited=['sns','chat'];state.clues=clueMessages.filter(c=>c.id!==m.id).map(c=>c.id);
+    assert.equal(evidenceReady(state),false);inspect(state,m.id,m.reason);assert.equal(evidenceReady(state),true);
+  }
 });

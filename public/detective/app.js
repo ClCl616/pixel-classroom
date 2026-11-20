@@ -1,5 +1,5 @@
-import {messages,reasons,writing,actions,responses,quizzes,newCase,inspect,evidenceReady,writingReady,planReady,escapeHtml as esc} from './data.js';
-import {createTypewriter,detectivePortrait,caseBoard,concepts,dialoguePages,evidencePages,stepDialogue} from './scenes.js';
+import {messages,reasons,reasonChoices,clueTypes,clueCount,writing,actions,responses,quizzes,newCase,inspect,evidenceReady,writingReady,planReady,escapeHtml as esc} from './data.js';
+import {createTypewriter,detectivePortrait,caseBoard,concepts,dialoguePages,evidencePages,stepDialogue,boardPageCount,boardPageFor} from './scenes.js';
 
 const app=document.querySelector('#app'),dialog=document.querySelector('#dialog'),dialogBody=document.querySelector('#dialog-body');
 const motion=window.matchMedia('(prefers-reduced-motion: reduce)'),typer=createTypewriter();
@@ -39,26 +39,26 @@ function reset(){touchGuideShown=false;typer.stop();story=null;pendingClue=null;
 
 dialog.addEventListener('close',()=>{
   activeClue=null;
-  if(pendingClue&&!leaving){state.latest=pendingClue;pendingClue=null;state.view='board';render();}
+  if(pendingClue&&!leaving){state.latest=pendingClue;state.boardPage=boardPageFor(pendingClue);pendingClue=null;state.view='board';render();}
   else if(returnFocus?.isConnected&&!leaving)returnFocus.focus({preventScroll:true});
 });
 function fileButtons(){return `<div class="file-tabs" role="group" aria-label="사건 파일">${['sns','chat'].map((room,i)=>`<button data-room="${room}" aria-pressed="${state.room===room}">${i===0?'A · SNS':'B · 단톡방'}<small>${state.visited.includes(room)?'열람함':'미열람'}</small></button>`).join('')}</div>`;}
 function renderFiles(){
-  shell(`${title('CASE FILES','어디부터 살펴볼까?','두 파일에 남겨진 말을 조사해 보세요.')}<div class="file-selection"><button data-room="sns" class="case-folder"><span class="folder-tab">FILE A</span><span class="folder-symbol" aria-hidden="true">#</span><strong>SNS 게시물</strong><span>발표 사진에 달린 댓글</span><small>${state.visited.includes('sns')?'열람함':'새 파일'}</small></button><button data-room="chat" class="case-folder lilac"><span class="folder-tab">FILE B</span><span class="folder-symbol" aria-hidden="true">···</span><strong>반 단톡방</strong><span>연습 시간을 정하던 대화</span><small>${state.visited.includes('chat')?'열람함':'새 파일'}</small></button></div>`,`${btn('board',`사건 보드 · ${state.clues.length}/4`,false,'quiet')}${btn('evidence-done','단서 정리',!evidenceReady(state))}`,'files');
+  shell(`${title('CASE FILES','어디부터 살펴볼까?','두 파일에 남겨진 말을 조사해 보세요.')}<div class="file-selection"><button data-room="sns" class="case-folder"><span class="folder-tab">FILE A</span><span class="folder-symbol" aria-hidden="true">#</span><strong>SNS 게시물</strong><span>발표 사진에 달린 댓글</span><small>${state.visited.includes('sns')?'열람함':'새 파일'}</small></button><button data-room="chat" class="case-folder lilac"><span class="folder-tab">FILE B</span><span class="folder-symbol" aria-hidden="true">···</span><strong>반 단톡방</strong><span>연습 시간을 정하던 대화</span><small>${state.visited.includes('chat')?'열람함':'새 파일'}</small></button></div>`,`${btn('board',`사건 보드 · ${state.clues.length}/${clueCount}`,false,'quiet')}${btn('evidence-done','단서 정리',!evidenceReady(state))}`,'files');
 }
 function renderEvidence(){
   if(!state.visited.includes(state.room))state.visited.push(state.room);
   const sns=state.room==='sns',pages=evidencePages(state.room),page=state.evidencePage[state.room];
-  shell(`${title('EVIDENCE SEARCH','메시지에서 단서 찾기')}${fileButtons()}<section class="phone-file"><div class="file-head"><span class="avatar">${sns?'지':'3'}</span><div><strong>${sns?'지안의 발표 사진':'3학년 1반 · 발표 준비'}</strong><small>${sns?'어제 오후 4:10 · 가상 SNS':'오늘 오후 3:30 · 가상 단톡방'}</small></div></div>${sns?'<div class="post-caption"><span class="mini-photo" aria-hidden="true">발표<br>끝!</span><p><b>지안</b> 오늘 발표 끝!<br>긴장했지만 끝까지 했다.</p></div>':''}<div class="message-scroll" tabindex="0" role="region" aria-label="조사할 대화"><div class="messages">${pages[page].map(m=>`<button class="message ${state.clues.includes(m.id)?'collected':''}" data-clue="${m.id}" aria-label="${m.name}: ${esc(m.text)}${state.clues.includes(m.id)?' · 보드에 연결됨':''}"><span class="avatar">${m.name[0]}</span><span><small>${m.name}</small><span class="bubble">${esc(m.text)}</span></span><span class="clue-mark" aria-hidden="true">${state.clues.includes(m.id)?'✓':'+'}</span></button>`).join('')}</div>${!sns&&page===pages.length-1?'<p class="left-room">지안이가 채팅방을 나갔습니다.</p>':''}</div>${pager(page,pages.length,'evidence-prev','evidence-next')}</section><p class="scene-tip">말을 눌러 조사해요. 다음 장의 대화도 살펴봐요.</p>`,`${btn('board',`사건 보드 · ${state.clues.length}/4`,false,'quiet')}${btn('evidence-done','단서 정리',!evidenceReady(state))}`,'evidence');
+  shell(`${title('EVIDENCE SEARCH','메시지에서 단서 찾기')}${fileButtons()}<section class="phone-file"><div class="file-head"><span class="avatar">${sns?'지':'3'}</span><div><strong>${sns?'지안의 발표 사진':'3학년 1반 · 발표 준비'}</strong><small>${sns?'어제 오후 4:10 · 가상 SNS':'오늘 오후 3:30 · 가상 단톡방'}</small></div></div>${sns&&page===0?'<div class="post-caption"><span class="mini-photo" aria-hidden="true">발표<br>끝!</span><p><b>지안</b> 오늘 발표 끝!<br>긴장했지만 끝까지 했다.</p></div>':''}<div class="message-scroll" tabindex="0" role="region" aria-label="조사할 대화"><div class="messages">${pages[page].map(m=>`<button class="message ${state.clues.includes(m.id)?'collected':''}" data-clue="${m.id}" aria-label="${m.name}: ${esc(m.text)}${state.clues.includes(m.id)?' · 보드에 연결됨':''}"><span class="avatar">${m.name[0]}</span><span><small>${m.name}</small><span class="bubble">${esc(m.text)}</span></span><span class="clue-mark" aria-hidden="true">${state.clues.includes(m.id)?'✓':'+'}</span></button>`).join('')}</div>${!sns&&page===pages.length-1?'<p class="left-room">지안이가 채팅방을 나갔습니다.</p>':''}</div>${pager(page,pages.length,'evidence-prev','evidence-next')}</section><p class="scene-tip">말을 눌러 조사해요. 다음 장의 대화도 살펴봐요.</p>`,`${btn('board',`사건 보드 · ${state.clues.length}/${clueCount}`,false,'quiet')}${btn('evidence-done','단서 정리',!evidenceReady(state))}`,'evidence');
 }
 function renderBoard(){
   const m=messages.find(m=>m.id===state.latest);
-  const line=m?(state.clues.length===4?'네 단서가 연결됐어. 이제 함께 정리해 보자!':`${m.room==='sns'?'외모를 비하하는 말':'친구를 제외하는 말'}이 연결됐어. 다른 말도 조사해 보자.`):'단서들이 사건과 연결됐어. 카드를 누르면 다시 읽을 수 있어.';
-  shell(`${title(m?'NEW CONNECTION':'EVIDENCE BOARD',m?'새 단서가 연결됐어!':'우리의 사건 보드')}${caseBoard(state.clues,state.latest)}${speech(line)}`,evidenceReady(state)?btn('resume-evidence','파일 다시 보기',false,'text-button'):'','board');
+  const line=m?(evidenceReady(state)?'모든 단서가 연결됐어. 이제 함께 정리해 보자!':`${clueTypes[m.reason]} 단서가 연결됐어. 다른 말도 조사해 보자.`):'단서들이 사건과 연결됐어. 카드를 누르면 다시 읽을 수 있어.';
+  shell(`${title(m?'NEW CONNECTION':'EVIDENCE BOARD',m?'새 단서가 연결됐어!':'우리의 사건 보드')}${caseBoard(state.clues,state.latest,state.boardPage)}${pager(state.boardPage,boardPageCount,'board-prev','board-next')}${speech(line)}`,evidenceReady(state)?btn('resume-evidence','파일 다시 보기',false,'text-button'):'','board');
   typeLine(line,()=>{if(evidenceReady(state))summarizeEvidence();else{state.view='evidence';render();}},evidenceReady(state)?'눌러서 단서 정리':'눌러서 조사 계속');state.latest=null;
 }
 function renderConcept(){const c=concepts[state.concept];
-  shell(`${title(`CASE NOTES · ${state.concept+1} / 3`,'단서의 의미를 읽어 보자')}<article class="paper concept-card ${c.color}"><span class="label">${c.tag}</span><h2>${c.name}</h2><p>${c.body}</p><blockquote>${c.example}</blockquote></article>`,`${btn('concept-back',state.concept?'이전':'사건 보드',false,'quiet')}${btn('concept-next',state.concept===2?'댓글 바꾸기':'다음 카드')}`,'concept');
+  shell(`${title(`CASE NOTES · ${state.concept+1} / ${concepts.length}`,'단서의 의미를 읽어 보자')}<article class="paper concept-card ${c.color}"><span class="label">${c.tag}</span><h2>${c.name}</h2><p>${c.body}</p><blockquote>${c.example}</blockquote></article>`,`${btn('concept-back',state.concept?'이전':'사건 보드',false,'quiet')}${btn('concept-next',state.concept===concepts.length-1?'댓글 바꾸기':'다음 카드')}`,'concept');
 }
 function renderWriting(){const i=state.mission,w=writing[i];
   shell(`${title(`REWRITE LAB · ${i+1} / 2`,state.preview?'내 문장 살펴보기':w.title)}<section class="paper writing-paper"><span class="label">원래 메시지</span><blockquote class="original">${w.original}</blockquote>${state.preview?`<div class="rewritten"><span class="avatar">나</span><p>${esc(state.drafts[i])}</p></div><fieldset><legend>내 문장을 직접 확인해요</legend>${['상대를 비웃거나 탓하는 표현은 없나요?','함께 참여하거나 도움받을 수 있는 말인가요?'].map((text,n)=>`<label class="check-row"><input type="checkbox" data-review="${n}" ${state.reviews[i][n]?'checked':''}><span>${text}</span></label>`).join('')}</fieldset>`:`<label for="draft">${w.prompt}</label><textarea id="draft" maxlength="200" rows="3" placeholder="내가 건넬 새로운 말">${esc(state.drafts[i])}</textarea><div class="writing-tools">${btn('hint','말문이 막히면 힌트',false,'text-button')}<span><span id="draft-count">${state.drafts[i].length}</span> / 200</span></div>`}</section>`,state.preview?`${btn('edit','조금 고치기',false,'quiet')}${btn('save-writing','이 문장 남기기',!writingReady(state,i))}`:`${btn('writing-back',i?'첫 번째 문장':'단서 정리',false,'quiet')}${btn('preview','문장 확인',!state.drafts[i].trim())}`,'writing');
@@ -82,7 +82,7 @@ function renderQuiz(){const q=quizzes[state.quiz],answer=state.answers[state.qui
   shell(`${title(`FINAL CHECK · ${state.quiz+1} / 3`,'마지막으로 확인해 볼까?')}<section class="quiz-paper"><span class="stamp">CHECK</span><h2>${q.question}</h2>${answer===undefined?`<div class="ox">${[true,false].map(v=>`<button data-answer="${v}" aria-label="${v?'O, 그렇다':'X, 아니다'}">${v?'O':'X'}</button>`).join('')}</div>`:`<div class="feedback" role="status"><strong>${answer===q.answer?'맞아요!':'함께 확인해요.'} 정답은 ${q.answer?'O':'X'}</strong><p>${q.feedback}</p><small>내 선택: ${answer?'O':'X'}</small></div>`}</section>`,btn('quiz-next',state.quiz===2?'사건 수첩 완성':'다음 질문',answer===undefined),'quiz');
 }
 function noteSection(index,mission=null){
-  if(index===0)return `<h3>내가 찾은 문제</h3><p>${state.clues.length?[state.clues.some(id=>id.startsWith('a'))?'외모 비하':'',state.clues.some(id=>id.startsWith('b'))?'특정 친구 배제':''].filter(Boolean).join(' · '):'아직 조사 전이에요.'}</p><ul>${state.clues.map(id=>`<li>${esc(messages.find(m=>m.id===id).text)}</li>`).join('')}</ul>`;
+  if(index===0)return `<h3>내가 찾은 문제</h3><p>${state.clues.length?[...new Set(state.clues.map(id=>clueTypes[messages.find(m=>m.id===id).reason]))].join(' · '):'아직 조사 전이에요.'}</p><ul>${state.clues.map(id=>`<li>${esc(messages.find(m=>m.id===id).text)}</li>`).join('')}</ul>`;
   if(index===1)return `<h3>내가 바꾼 문장</h3>${writing.flatMap((w,i)=>mission!==null&&mission!==i?[]:[`<div class="note-entry"><small>${w.title}</small><p>${state.saved[i]?esc(state.drafts[i]):'아직 남긴 문장이 없어요.'}</p></div>`]).join('')}`;
   if(index===2)return `<h3>나의 해결 계획</h3>${state.plan.length?`<ul>${state.plan.map(id=>{const a=actions.find(a=>a.id===id);return `<li>${a.title}${a.safe?'':' · 수정이 필요한 행동'}</li>`;}).join('')}</ul>`:'<p>아직 선택한 행동이 없어요.</p>'}`;
   return `<h3>내가 기억할 한 가지</h3><p>${state.pledge.trim()?esc(state.pledge):'아직 남긴 문장이 없어요.'}</p>`;
@@ -93,7 +93,7 @@ function renderReport(){const last=state.reportPage===4;
 }
 function render(){
   if(story){renderStory();return;}
-  if(state.stage===0){shell(`<div class="intro-art"><img src="preview.svg" alt="메시지와 사진을 실로 연결한 사건 보드와 픽셀 탐정"><span class="stamp">새 사건</span></div>${title('사이버폭력 탐정단','사라진 친구의 메시지','지안이가 단톡방을 나갔다. 남겨진 대화 속에서 단서를 찾아라.')}<p class="intro-note">12~15분 · 가상의 사건<br>실제 친구의 이름이나 경험은 쓰지 않아도 괜찮아요.</p>`,btn('start','사건 파일 열기'),'intro');return;}
+  if(state.stage===0){shell(`<div class="intro-art"><img src="preview.svg" alt="메시지와 사진을 실로 연결한 사건 보드와 픽셀 탐정"><span class="stamp">새 사건</span></div>${title('사이버폭력 탐정단','사라진 친구의 메시지','지안이가 단톡방을 나갔다. 남겨진 대화 속에서 단서를 찾아라.')}<p class="intro-note">15~20분 · 가상의 사건<br>실제 친구의 이름이나 경험은 쓰지 않아도 괜찮아요.</p>`,btn('start','사건 파일 열기'),'intro');return;}
   if(state.stage===1){if(state.view==='board')renderBoard();else if(state.view==='evidence')renderEvidence();else renderFiles();return;}
   if(state.stage===2){renderConcept();return;}
   if(state.stage===3){renderWriting();return;}
@@ -102,12 +102,12 @@ function render(){
   if(state.stage===6){renderQuiz();return;}
   renderReport();
 }
-function clueQuestion(m){return `<h2 id="dialog-title" tabindex="-1">이 말을 고른 이유는?</h2><blockquote>${esc(m.text)}</blockquote><div class="reason-list">${reasons.map((r,i)=>`<button class="quiet" data-reason="${i}">${r}</button>`).join('')}</div>`;}
+function clueQuestion(m){return `<h2 id="dialog-title" tabindex="-1">이 말을 고른 이유는?</h2><blockquote>${esc(m.text)}</blockquote><div class="reason-list">${reasonChoices(m).map(i=>`<button class="quiet" data-reason="${i}">${reasons[i]}</button>`).join('')}</div>`;}
 function openClue(id){
   const m=messages.find(m=>m.id===id);if(!m)return;activeClue=id;
   modal(clueQuestion(m));
 }
-function summarizeEvidence(){state.concept=0;talk(['네 개의 단서가 하나의 사건으로 이어졌어. 외모를 비하하는 말, 그리고 특정 친구를 제외하는 행동이 보이지?','이제 단서의 의미를 한 장씩 확인하고, 우리가 직접 말을 바꿔 보자.'],()=>go(2));}
+function summarizeEvidence(){state.concept=0;talk(['일곱 개의 단서가 연결됐어. 비하와 따돌림뿐 아니라 거짓 소문, 개인정보 공개, 협박도 있었어.','이제 단서의 의미를 한 장씩 확인하고, 우리가 직접 말을 바꿔 보자.'],()=>go(2));}
 function showBoard(){state.view='board';state.latest=null;go(1);}
 app.addEventListener('click',event=>{
   const target=event.target.closest('button');if(!target||target.disabled)return;
@@ -133,11 +133,13 @@ app.addEventListener('click',event=>{
   else if(action==='evidence-next'&&state.evidencePage[state.room]<evidencePages(state.room).length-1){state.evidencePage[state.room]++;render();}
   else if(action==='review-prev'&&state.planReviewPage>0){state.planReviewPage--;render();}
   else if(action==='review-next'&&state.planReviewPage<state.plan.length-1){state.planReviewPage++;render();}
+  else if(action==='board-prev'&&state.boardPage>0){state.boardPage--;render();}
+  else if(action==='board-next'&&state.boardPage<boardPageCount-1){state.boardPage++;render();}
   else if(action==='board')showBoard();
   else if(action==='resume-evidence'){state.view='evidence';render();}
   else if(action==='evidence-done'&&evidenceReady(state))summarizeEvidence();
   else if(action==='concept-back'){if(state.concept){state.concept--;render();}else showBoard();}
-  else if(action==='concept-next'){if(state.concept<2){state.concept++;render();}else{state.mission=0;state.preview=false;talk(['이번에는 네가 말할 차례야. 외모를 평가하는 대신 친구의 노력과 참여를 존중하는 말을 써 보자.','자동으로 정답을 판정하지 않아. 네 문장을 읽고, 친구를 존중하는 말인지 직접 확인해 줘.'],()=>go(3));}}
+  else if(action==='concept-next'){if(state.concept<concepts.length-1){state.concept++;render();}else{state.mission=0;state.preview=false;talk(['이번에는 네가 말할 차례야. 외모를 평가하는 대신 친구의 노력과 참여를 존중하는 말을 써 보자.','자동으로 정답을 판정하지 않아. 네 문장을 읽고, 친구를 존중하는 말인지 직접 확인해 줘.'],()=>go(3));}}
   else if(action==='hint'){const w=writing[state.mission];modal(`<h2 id="dialog-title" tabindex="-1">말문을 여는 힌트</h2><ul>${w.hints.map(h=>`<li>${h}</li>`).join('')}</ul><p>${w.example}</p>${btn('example','예시를 보고 바꿔 쓰기')}`);}
   else if(action==='preview'&&state.drafts[state.mission].trim()){state.preview=true;render();}
   else if(action==='edit'){state.preview=false;render();app.querySelector('#draft').focus();}
@@ -179,7 +181,7 @@ dialogBody.addEventListener('click',event=>{
   dialog.scrollTop=0;dialog.querySelector('h2').focus();
 });
 document.querySelector('#notes').onclick=()=>modal(`<span class="eyebrow">PRIVATE CASE NOTES</span><h2 id="dialog-title" tabindex="-1">나의 사건 수첩</h2>${notebook()}<p class="muted">선택과 문장은 이 페이지에서만 유지됩니다.</p>`);
-document.querySelector('#guide').onclick=()=>modal('<h2 id="dialog-title" tabindex="-1">탐정단 활동 안내</h2><p>파일 조사 → 사건 보드 연결 → 댓글 바꾸기 → 해결 계획 → 최종 확인 순서로 진행해요. 약 12~15분 걸려요.</p><h3>회로와 함께 한 장면씩</h3><p>대사는 순서대로 나타나요. 말풍선 오른쪽을 누르면 대사가 완성되고, 다시 누르면 다음 대사나 조사로 넘어가요. 왼쪽을 누르면 이전 대사로 돌아가요. 이미 읽은 대사는 바로 표시해요. 첫 대사를 다 읽으면 좌우 안내가 한 번 움직여요. 키보드에서는 말풍선에 초점을 둔 뒤 Enter·Space 또는 좌우 방향키를 눌러요. 사건 보드에서는 말풍선 전체로 조사를 이어가요. “대사 건너뛰기”는 브리핑 전체를 넘겨요. 기기의 동작 감소 설정에서는 대사가 즉시 보여요.</p><h3>나만 보는 사건 수첩</h3><p>선택과 문장은 서버나 브라우저 저장소에 저장하지 않아요. 교사도 개인 결과나 완료 인원을 조회할 수 없어요. 종료·새로고침·페이지 이탈 시 지워져요.</p><h3>함께 이야기하기</h3><p>실제 친구의 이름이나 피해 경험, 개인 결과 공개를 요구하지 않고 가상 사건을 토의해요. 자동 글쓰기 평가나 점수·순위는 없어요.</p>');
+document.querySelector('#guide').onclick=()=>modal('<h2 id="dialog-title" tabindex="-1">탐정단 활동 안내</h2><p>파일 조사 → 사건 보드 연결 → 댓글 바꾸기 → 해결 계획 → 최종 확인 순서로 진행해요. 약 15~20분 걸려요.</p><h3>회로와 함께 한 장면씩</h3><p>대사는 순서대로 나타나요. 말풍선 오른쪽을 누르면 대사가 완성되고, 다시 누르면 다음 대사나 조사로 넘어가요. 왼쪽을 누르면 이전 대사로 돌아가요. 이미 읽은 대사는 바로 표시해요. 첫 대사를 다 읽으면 좌우 안내가 한 번 움직여요. 키보드에서는 말풍선에 초점을 둔 뒤 Enter·Space 또는 좌우 방향키를 눌러요. 사건 보드에서는 말풍선 전체로 조사를 이어가요. “대사 건너뛰기”는 브리핑 전체를 넘겨요. 기기의 동작 감소 설정에서는 대사가 즉시 보여요.</p><h3>나만 보는 사건 수첩</h3><p>선택과 문장은 서버나 브라우저 저장소에 저장하지 않아요. 교사도 개인 결과나 완료 인원을 조회할 수 없어요. 종료·새로고침·페이지 이탈 시 지워져요.</p><h3>함께 이야기하기</h3><p>실제 친구의 이름이나 피해 경험, 개인 결과 공개를 요구하지 않고 가상 사건을 토의해요. 자동 글쓰기 평가나 점수·순위는 없어요.</p>');
 motion.addEventListener('change',()=>{if(motion.matches)typer.finish();});
 window.addEventListener('pagehide',()=>{leaving=true;typer.stop();pendingClue=null;story=null;if(dialog.open)dialog.close();dialogBody.innerHTML='';returnFocus=null;activeClue=null;state=newCase();render();});
 window.addEventListener('pageshow',()=>{leaving=false;});

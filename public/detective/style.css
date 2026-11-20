@@ -74,3 +74,9 @@ button.speech:active:not(:disabled){transform:none}
  @keyframes teach-left{50%{translate:-5px 0;color:#173d37;opacity:1}}
  @keyframes teach-right{50%{translate:5px 0;color:#173d37}}
 }
+
+/* Keep each board page readable as the evidence collection grows. */
+.scene-board .scene-pager{flex:none;margin:0 auto;gap:20px}
+.scene-board .scene-pager button{min-height:44px;padding:6px 12px;font-size:13px}
+.scene-board .controls{padding:0 12px 4px}.scene-board .controls button{min-height:44px}
+@media(max-width:680px){.scene-board .workspace{gap:8px}.scene-board .case-board{min-height:220px}.scene-board .board-pin{gap:3px;padding:7px}.scene-board .board-pin>span{font-size:13px;line-height:1.45}}
