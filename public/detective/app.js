@@ -1,27 +1,27 @@
 import {messages,reasons,writing,actions,responses,quizzes,newCase,inspect,evidenceReady,writingReady,planReady,escapeHtml as esc} from './data.js';
-import {createTypewriter,detectivePortrait,caseBoard,concepts} from './scenes.js';
+import {createTypewriter,detectivePortrait,caseBoard,concepts,dialoguePages,evidencePages} from './scenes.js';
 
 const app=document.querySelector('#app'),dialog=document.querySelector('#dialog'),dialogBody=document.querySelector('#dialog-body');
 const motion=window.matchMedia('(prefers-reduced-motion: reduce)'),typer=createTypewriter();
 let state=newCase(),activeClue=null,returnFocus=null,pendingClue=null,story=null,leaving=false;
 const stages=['사건 접수','단서 찾기','단서 정리','댓글 바꾸기','해결 계획','도움 연결','최종 확인','조사 완료'];
 const btn=(action,label,disabled=false,kind='primary')=>`<button class="${kind}" data-action="${action}" ${disabled?'disabled':''}>${label}</button>`;
-const title=(kicker,heading,description='')=>`<div class="page-heading"><span class="eyebrow">${kicker}</span><h1 tabindex="-1">${heading}</h1>${description?`<p>${description}</p>`:''}</div>`;
+const title=(kicker,heading,description='')=>`<div class="page-heading"><span class="sr-only">${kicker}</span><h1 tabindex="-1">${heading}</h1>${kicker.match(/\d+ \/ \d+/)?.[0]?`<span class="scene-count">${kicker.match(/\d+ \/ \d+/)[0]}</span>`:''}${description?`<p>${description}</p>`:''}</div>`;
 const pager=(current,total,back,next)=>`<nav class="scene-pager" aria-label="장면 넘기기">${btn(back,'이전',current===0,'quiet')}<span>${current+1} / ${total}</span>${btn(next,'다음',current===total-1,'quiet')}</nav>`;
 function shell(content,footer='',kind=''){
   typer.stop();
-  app.innerHTML=`<div class="game scene-${kind}"><nav class="case-progress" aria-label="사건 진행"><span class="case-number">CASE 03</span><ol>${stages.map((label,i)=>`<li class="${state.stage===i?'current':state.stage>i?'done':''}" ${state.stage===i?'aria-current="step"':''}><span aria-hidden="true">${state.stage>i?'✓':String(i+1).padStart(2,'0')}</span><span>${label}</span></li>`).join('')}</ol><span class="progress-mobile">${state.stage+1} / 8 · ${stages[state.stage]}</span></nav><section class="workspace">${content}</section>${footer?`<footer class="controls">${footer}</footer>`:''}</div>`;
+  app.innerHTML=`<div class="game scene-${kind}"><span class="sr-only">${stages[state.stage]}</span><section class="workspace">${content}</section>${footer?`<footer class="controls">${footer}</footer>`:''}</div>`;
   app.querySelector('h1')?.focus({preventScroll:true});
 }
 function go(stage){state.stage=stage;render();}
-function talk(lines,after){story={lines,index:0,after};render();}
+function talk(lines,after){story={lines:dialoguePages(lines),index:0,after};render();}
 function speech(text,speaker='회로 탐정'){
   return `<aside class="speech"><div class="speaker-portrait">${speaker==='회로 탐정'?detectivePortrait:`<span class="avatar">${speaker[0]}</span>`}</div><div class="speech-copy"><small>${speaker}</small><p class="spoken-line"><span class="sr-only">${esc(text)}</span><span id="typed-line" aria-hidden="true"></span></p></div></aside>`;
 }
 function typeLine(text,done=()=>{}){typer.start(text,value=>{const el=document.querySelector('#typed-line');if(el)el.textContent=value;},done,motion.matches);}
 function renderStory(){
   const line=story.lines[story.index],text=typeof line==='string'?line:line.text,speaker=typeof line==='string'?'회로 탐정':line.speaker;
-  shell(`${title('DETECTIVE RADIO',speaker==='회로 탐정'?'회로 탐정의 브리핑':'새 메시지 도착')}<div class="story-illustration"><img src="preview.svg" alt="단서를 연결하는 픽셀 탐정의 사건 보드"><span class="radio-light" aria-hidden="true"></span></div>${speech(text,speaker)}<p class="line-count">대화 ${story.index+1} / ${story.lines.length}</p>`,`${btn('skip-story','대사 건너뛰기',false,'quiet')}${btn('story-next','바로 보기')}`,'story');
+  shell(`${title('DETECTIVE RADIO',speaker==='회로 탐정'?'회로 탐정의 브리핑':'새 메시지 도착')}<div class="story-illustration"><img src="preview.svg" alt="단서를 연결하는 픽셀 탐정의 사건 보드"><span class="radio-light" aria-hidden="true"></span></div>${speech(text,speaker)}<p class="line-count sr-only">대화 ${story.index+1} / ${story.lines.length}</p>`,`${btn('skip-story','대사 건너뛰기',false,'quiet')}${btn('story-next','바로 보기')}`,'story');
   typeLine(text,()=>{const next=app.querySelector('[data-action="story-next"]');if(next)next.textContent=story.index===story.lines.length-1?'조사 계속하기':'다음 대사';});
 }
 function endStory(){const after=story.after;story=null;typer.stop();after();}
@@ -39,12 +39,12 @@ function renderFiles(){
 }
 function renderEvidence(){
   if(!state.visited.includes(state.room))state.visited.push(state.room);
-  const sns=state.room==='sns';
-  shell(`${title('EVIDENCE SEARCH','메시지에서 단서 찾기')}${fileButtons()}<section class="phone-file"><div class="file-head"><span class="avatar">${sns?'지':'3'}</span><div><strong>${sns?'지안의 발표 사진':'3학년 1반 · 발표 준비'}</strong><small>${sns?'어제 오후 4:10 · 가상 SNS':'오늘 오후 3:30 · 가상 단톡방'}</small></div></div>${sns?'<div class="post-caption"><span class="mini-photo" aria-hidden="true">발표<br>끝!</span><p><b>지안</b> 오늘 발표 끝!<br>긴장했지만 끝까지 했다.</p></div>':''}<div class="message-scroll" tabindex="0" role="region" aria-label="조사할 대화"><div class="messages">${messages.filter(m=>m.room===state.room).map(m=>`<button class="message ${state.clues.includes(m.id)?'collected':''}" data-clue="${m.id}" aria-label="${m.name}: ${esc(m.text)}${state.clues.includes(m.id)?' · 보드에 연결됨':''}"><span class="avatar">${m.name[0]}</span><span><small>${m.name}</small><span class="bubble">${esc(m.text)}</span></span><span class="clue-mark" aria-hidden="true">${state.clues.includes(m.id)?'✓':'+'}</span></button>`).join('')}</div>${!sns?'<p class="left-room">지안이가 채팅방을 나갔습니다.</p>':''}</div></section><p class="scene-tip">말을 누르고 이유를 골라요. 앞뒤 맥락도 살펴봐요.</p>`,`${btn('board',`사건 보드 · ${state.clues.length}/4`,false,'quiet')}${btn('evidence-done','단서 정리',!evidenceReady(state))}`,'evidence');
+  const sns=state.room==='sns',pages=evidencePages(state.room),page=state.evidencePage[state.room];
+  shell(`${title('EVIDENCE SEARCH','메시지에서 단서 찾기')}${fileButtons()}<section class="phone-file"><div class="file-head"><span class="avatar">${sns?'지':'3'}</span><div><strong>${sns?'지안의 발표 사진':'3학년 1반 · 발표 준비'}</strong><small>${sns?'어제 오후 4:10 · 가상 SNS':'오늘 오후 3:30 · 가상 단톡방'}</small></div></div>${sns?'<div class="post-caption"><span class="mini-photo" aria-hidden="true">발표<br>끝!</span><p><b>지안</b> 오늘 발표 끝!<br>긴장했지만 끝까지 했다.</p></div>':''}<div class="message-scroll" tabindex="0" role="region" aria-label="조사할 대화"><div class="messages">${pages[page].map(m=>`<button class="message ${state.clues.includes(m.id)?'collected':''}" data-clue="${m.id}" aria-label="${m.name}: ${esc(m.text)}${state.clues.includes(m.id)?' · 보드에 연결됨':''}"><span class="avatar">${m.name[0]}</span><span><small>${m.name}</small><span class="bubble">${esc(m.text)}</span></span><span class="clue-mark" aria-hidden="true">${state.clues.includes(m.id)?'✓':'+'}</span></button>`).join('')}</div>${!sns&&page===pages.length-1?'<p class="left-room">지안이가 채팅방을 나갔습니다.</p>':''}</div>${pager(page,pages.length,'evidence-prev','evidence-next')}</section><p class="scene-tip">말을 눌러 조사해요. 다음 장의 대화도 살펴봐요.</p>`,`${btn('board',`사건 보드 · ${state.clues.length}/4`,false,'quiet')}${btn('evidence-done','단서 정리',!evidenceReady(state))}`,'evidence');
 }
 function renderBoard(){
   const m=messages.find(m=>m.id===state.latest);
-  const line=m?`${m.room==='sns'?'외모를 깎아내리는 말':'친구를 제외하는 말'}이 사건과 연결됐어. ${state.clues.length===4?'네 개의 단서가 모였어. 이제 함께 정리해 보자!':'다른 말도 살펴보자. 응원하는 말은 단서로 넣지 않아.'}`:'발견한 단서들이 이 사건과 어떻게 이어지는지 살펴봐. 연결된 카드를 누르면 다시 읽을 수 있어.';
+  const line=m?(state.clues.length===4?'네 단서가 연결됐어. 이제 함께 정리해 보자!':`${m.room==='sns'?'외모를 비하하는 말':'친구를 제외하는 말'}이 연결됐어. 다른 말도 조사해 보자.`):'단서들이 사건과 연결됐어. 카드를 누르면 다시 읽을 수 있어.';
   shell(`${title(m?'NEW CONNECTION':'EVIDENCE BOARD',m?'새 단서가 연결됐어!':'우리의 사건 보드')}${caseBoard(state.clues,state.latest)}${speech(line)}`,`${btn('resume-evidence','조사 계속',false,'quiet')}${btn('evidence-done','단서 정리',!evidenceReady(state))}`,'board');
   typeLine(line);state.latest=null;
 }
@@ -56,7 +56,9 @@ function renderWriting(){const i=state.mission,w=writing[i];
 }
 function renderPlan(){
   if(state.planReview){
-    shell(`${title('OUR PLAN','우리의 해결 계획','두 가지 이상 고르고, 보복·재유포는 제외해요.')}<div class="plan-review">${state.plan.length?state.plan.map(id=>{const a=actions.find(a=>a.id===id);return `<article class="paper ${a.safe?'':'unsafe'}"><strong>${a.title}</strong>${!a.safe?`<p>${a.detail}</p>`:''}<button class="text-button" data-remove-plan="${id}" aria-label="${a.title} 계획에서 빼기">계획에서 빼기</button></article>`;}).join(''):'<p>아직 선택한 행동이 없어요. 카드를 살펴보며 계획을 골라 주세요.</p>'}</div><p class="scene-tip" role="status">${planReady(state)?'친구를 도울 계획이 준비됐어요.':'안전한 행동을 두 가지 이상 골라 주세요.'}</p>`,`${btn('plan-cards','카드 다시 보기',false,'quiet')}${btn('plan-done','이 계획으로 돕기',!planReady(state))}`,'plan-review');return;
+    state.planReviewPage=Math.min(state.planReviewPage,Math.max(0,state.plan.length-1));
+    const selected=actions.find(a=>a.id===state.plan[state.planReviewPage]);
+    shell(`${title('OUR PLAN','우리의 해결 계획')}<div class="plan-review">${selected?`<article class="paper ${selected.safe?'':'unsafe'}"><h2>${selected.title}</h2><p>${selected.detail}</p><button class="text-button" data-remove-plan="${selected.id}" aria-label="${selected.title} 계획에서 빼기">계획에서 빼기</button></article>`:'<p>아직 선택한 행동이 없어요. 카드를 살펴보며 계획을 골라 주세요.</p>'}</div>${state.plan.length?pager(state.planReviewPage,state.plan.length,'review-prev','review-next'):''}<p class="scene-tip" role="status">${planReady(state)?`${state.plan.length}개의 행동을 골랐어요. 친구를 도울 준비가 됐어요.`:state.plan.some(id=>!actions.find(a=>a.id===id)?.safe)?'수정할 행동이 있어요. 선택한 계획을 끝까지 살펴봐요.':'안전한 행동을 두 가지 이상 골라 주세요.'}</p>`,`${btn('plan-cards','카드 다시 보기',false,'quiet')}${btn('plan-done','이 계획으로 돕기',!planReady(state))}`,'plan-review');return;
   }
   const a=actions[state.actionPage],selected=state.plan.includes(a.id);
   shell(`${title(`ACTION CARD · ${state.actionPage+1} / ${actions.length}`,'어떤 행동이 도움이 될까?')}<article class="paper action-card ${selected?'selected':''}"><span class="action-number">${String(state.actionPage+1).padStart(2,'0')}</span><h2>${a.title}</h2><button data-plan="${a.id}" class="${selected?'quiet':'primary'}" aria-pressed="${selected}">${selected?'✓ 선택됨 · 계획에서 빼기':'해결 계획에 넣기'}</button><div class="action-explanation" role="status">${selected?`<p class="${a.safe?'':'revise'}">${a.detail}</p>`:'<p class="muted">선택하면 이 행동의 영향을 살펴볼 수 있어요.</p>'}</div></article>${pager(state.actionPage,actions.length,'action-prev','action-next')}`,`${btn('back-writing','댓글 보기',false,'quiet')}${btn('plan-review',`내 계획 보기 · ${state.plan.length}개`)}`,'plan');
@@ -70,15 +72,15 @@ function renderConnection(){
 function renderQuiz(){const q=quizzes[state.quiz],answer=state.answers[state.quiz];
   shell(`${title(`FINAL CHECK · ${state.quiz+1} / 3`,'마지막으로 확인해 볼까?')}<section class="quiz-paper"><span class="stamp">CHECK</span><h2>${q.question}</h2>${answer===undefined?`<div class="ox">${[true,false].map(v=>`<button data-answer="${v}" aria-label="${v?'O, 그렇다':'X, 아니다'}">${v?'O':'X'}</button>`).join('')}</div>`:`<div class="feedback" role="status"><strong>${answer===q.answer?'맞아요!':'함께 확인해요.'} 정답은 ${q.answer?'O':'X'}</strong><p>${q.feedback}</p><small>내 선택: ${answer?'O':'X'}</small></div>`}</section>`,btn('quiz-next',state.quiz===2?'사건 수첩 완성':'다음 질문',answer===undefined),'quiz');
 }
-function noteSection(index){
+function noteSection(index,mission=null){
   if(index===0)return `<h3>내가 찾은 문제</h3><p>${state.clues.length?[state.clues.some(id=>id.startsWith('a'))?'외모 비하':'',state.clues.some(id=>id.startsWith('b'))?'특정 친구 배제':''].filter(Boolean).join(' · '):'아직 조사 전이에요.'}</p><ul>${state.clues.map(id=>`<li>${esc(messages.find(m=>m.id===id).text)}</li>`).join('')}</ul>`;
-  if(index===1)return `<h3>내가 바꾼 문장</h3>${writing.map((w,i)=>`<div class="note-entry"><small>${w.title}</small><p>${state.saved[i]?esc(state.drafts[i]):'아직 남긴 문장이 없어요.'}</p></div>`).join('')}`;
+  if(index===1)return `<h3>내가 바꾼 문장</h3>${writing.flatMap((w,i)=>mission!==null&&mission!==i?[]:[`<div class="note-entry"><small>${w.title}</small><p>${state.saved[i]?esc(state.drafts[i]):'아직 남긴 문장이 없어요.'}</p></div>`]).join('')}`;
   if(index===2)return `<h3>나의 해결 계획</h3>${state.plan.length?`<ul>${state.plan.map(id=>{const a=actions.find(a=>a.id===id);return `<li>${a.title}${a.safe?'':' · 수정이 필요한 행동'}</li>`;}).join('')}</ul>`:'<p>아직 선택한 행동이 없어요.</p>'}`;
   return `<h3>내가 기억할 한 가지</h3><p>${state.pledge.trim()?esc(state.pledge):'아직 남긴 문장이 없어요.'}</p>`;
 }
 function notebook(){return [0,1,2,3].map(i=>`<section class="notebook-section">${noteSection(i)}</section>`).join('');}
-function renderReport(){const last=state.reportPage===3;
-  shell(`${title(`CASE REPORT · ${state.reportPage+1} / 4`,last?'내가 기억할 한 가지':'탐정단 조사 완료')}<article class="report-paper"><div class="report-header"><span>나의 사건 수첩</span><span class="stamp">조사 완료</span></div>${last?`<label for="pledge">온라인에서 누군가 상처받고 있다면, 나는…</label><textarea id="pledge" maxlength="200" rows="3" placeholder="내가 실천하고 싶은 행동">${esc(state.pledge)}</textarea><p class="muted">종료하거나 새로고침하면 나의 기록이 지워져요.</p>${btn('discussion','함께 이야기할 질문',false,'text-button')}`:noteSection(state.reportPage)}</article>`,`${btn('report-prev','이전',state.reportPage===0,'quiet')}${btn(last?'finish':'report-next',last?'활동 끝내기':'다음 페이지')}`,'report');
+function renderReport(){const last=state.reportPage===4;
+  shell(`${title(`CASE REPORT · ${state.reportPage+1} / 5`,last?'내가 기억할 한 가지':'탐정단 조사 완료')}<article class="report-paper"><div class="report-header"><span>나의 사건 수첩</span><span class="stamp">조사 완료</span></div>${last?`<label for="pledge">온라인에서 누군가 상처받고 있다면, 나는…</label><textarea id="pledge" maxlength="200" rows="3" placeholder="내가 실천하고 싶은 행동">${esc(state.pledge)}</textarea><p class="muted">종료하거나 새로고침하면 나의 기록이 지워져요.</p>${btn('discussion','함께 이야기할 질문',false,'text-button')}`:state.reportPage===0?noteSection(0):state.reportPage<3?noteSection(1,state.reportPage-1):noteSection(2)}</article>`,`${btn('report-prev','이전',state.reportPage===0,'quiet')}${btn(last?'finish':'report-next',last?'활동 끝내기':'다음 페이지')}`,'report');
 }
 function render(){
   if(story){renderStory();return;}
@@ -91,9 +93,10 @@ function render(){
   if(state.stage===6){renderQuiz();return;}
   renderReport();
 }
+function clueQuestion(m){return `<h2 id="dialog-title" tabindex="-1">이 말을 고른 이유는?</h2><blockquote>${esc(m.text)}</blockquote><div class="reason-list">${reasons.map((r,i)=>`<button class="quiet" data-reason="${i}">${r}</button>`).join('')}</div>`;}
 function openClue(id){
   const m=messages.find(m=>m.id===id);if(!m)return;activeClue=id;
-  modal(`<span class="eyebrow">단서 분석 · ${m.name}</span><h2 id="dialog-title" tabindex="-1">이 말을 고른 이유는?</h2><blockquote>${esc(m.text)}</blockquote><div class="reason-list">${reasons.map((r,i)=>`<button class="quiet" data-reason="${i}">${r}</button>`).join('')}</div><div id="clue-feedback" role="status"></div>`);
+  modal(clueQuestion(m));
 }
 function showBoard(){state.view='board';state.latest=null;go(1);}
 app.addEventListener('click',event=>{
@@ -109,6 +112,10 @@ app.addEventListener('click',event=>{
   if(action==='start')talk(['반 단톡방에서 지안이의 메시지가 멈췄어. 무슨 일이 있었는지 함께 살펴볼까?','우리가 찾는 건 친구의 잘못이 아니야. 친구를 힘들게 한 말과 행동을 찾는 거야.','SNS 게시물과 단톡방을 조사해 보자. 단서를 찾으면 사건 보드에 연결할게.'],()=>go(1));
   else if(action==='story-next'){if(typer.isTyping())typer.finish();else if(story.index<story.lines.length-1){story.index++;render();}else endStory();}
   else if(action==='skip-story')endStory();
+  else if(action==='evidence-prev'&&state.evidencePage[state.room]>0){state.evidencePage[state.room]--;render();}
+  else if(action==='evidence-next'&&state.evidencePage[state.room]<evidencePages(state.room).length-1){state.evidencePage[state.room]++;render();}
+  else if(action==='review-prev'&&state.planReviewPage>0){state.planReviewPage--;render();}
+  else if(action==='review-next'&&state.planReviewPage<state.plan.length-1){state.planReviewPage++;render();}
   else if(action==='board')showBoard();
   else if(action==='resume-evidence'){state.view='evidence';render();}
   else if(action==='evidence-done'&&evidenceReady(state)){state.concept=0;talk(['네 개의 단서가 하나의 사건으로 이어졌어. 외모를 비하하는 말, 그리고 특정 친구를 제외하는 행동이 보이지?','이제 단서의 의미를 한 장씩 확인하고, 우리가 직접 말을 바꿔 보자.'],()=>go(2));}
@@ -122,7 +129,7 @@ app.addEventListener('click',event=>{
   else if(action==='back-writing'){state.mission=0;state.preview=false;go(3);}
   else if(action==='action-prev'&&state.actionPage>0){state.actionPage--;render();}
   else if(action==='action-next'&&state.actionPage<actions.length-1){state.actionPage++;render();}
-  else if(action==='plan-review'){state.planReview=true;render();}
+  else if(action==='plan-review'){state.planReview=true;state.planReviewPage=0;render();}
   else if(action==='plan-cards'){state.planReview=false;render();}
   else if(action==='plan-done'&&planReady(state))go(5);
   else if(action==='back-plan'){state.planReview=true;go(4);}
@@ -130,7 +137,7 @@ app.addEventListener('click',event=>{
   else if(action==='connection-done'&&state.response===1)talk([{speaker:'지안',text:'내가 걱정하는 것도 같이 말해 줄래?'},{speaker:'나',text:'응. 네가 더 불편해지지 않게 도와달라고 함께 말씀드리자.'},'도움 요청이 시작됐어. 상황이 나아지는지 계속 살피는 것도 중요해.'],()=>go(6));
   else if(action==='quiz-next'&&state.answers[state.quiz]!==undefined){if(state.quiz<2){state.quiz++;render();}else{state.reportPage=0;go(7);}}
   else if(action==='report-prev'&&state.reportPage>0){state.reportPage--;render();}
-  else if(action==='report-next'&&state.reportPage<3){state.reportPage++;render();}
+  else if(action==='report-next'&&state.reportPage<4){state.reportPage++;render();}
   else if(action==='discussion')modal('<h2 id="dialog-title" tabindex="-1">함께 이야기할 질문</h2><ol><li>장난이라는 말과 상대가 받는 영향은 어떻게 다를까요?</li><li>직접 “그만해”라고 말하기 어려울 때도 할 수 있는 도움은 무엇일까요?</li><li>기록 보관과 피해 내용 재유포는 무엇이 다를까요?</li></ol><p>실제 경험이나 개인 결과를 공개하지 않고 가상 사건으로 이야기해요.</p>');
   else if(action==='finish')reset();
 });
@@ -142,11 +149,12 @@ app.addEventListener('change',event=>{if(event.target.dataset.review!==undefined
 dialogBody.addEventListener('click',event=>{
   const example=event.target.closest('[data-action="example"]');
   if(example){state.drafts[state.mission]=writing[state.mission].example;state.reviews[state.mission]=[false,false];state.saved[state.mission]=false;dialog.close();render();app.querySelector('#draft').focus();return;}
+  if(event.target.closest('[data-action="retry-clue"]')&&activeClue){dialogBody.innerHTML=clueQuestion(messages.find(m=>m.id===activeClue));dialog.scrollTop=0;dialog.querySelector('h2').focus();return;}
   const target=event.target.closest('[data-reason]');if(!target||target.disabled||!activeClue)return;
   const m=messages.find(m=>m.id===activeClue),already=state.clues.includes(m.id),correct=inspect(state,m.id,Number(target.dataset.reason));
-  dialogBody.querySelector('#clue-feedback').innerHTML=`<div class="feedback"><strong>${correct?(m.clue?'사건과 이어지는 단서를 찾았어요':'문제 행동의 단서는 아니에요'):'앞뒤 대화를 다시 살펴봐요'}</strong><p>${m.feedback}</p>${!correct?'<p>설명을 읽고 이유를 다시 골라 보세요.</p>':''}</div>`;
-  if(correct){dialogBody.querySelectorAll('[data-reason]').forEach(b=>{b.disabled=true;b.classList.toggle('selected',b===target);});if(m.clue&&!already){pendingClue=m.id;dialog.querySelector('form button').textContent='사건 보드에 연결';}}
-  const feedback=dialogBody.querySelector('#clue-feedback');feedback.setAttribute('tabindex','-1');feedback.focus();
+  dialogBody.innerHTML=`<h2 id="dialog-title" tabindex="-1">${correct?(m.clue?'단서를 찾았어!':'이 말은 단서가 아니야'):'다시 살펴볼까?'}</h2><blockquote>${esc(m.text)}</blockquote><div id="clue-feedback" class="feedback" role="status"><p>${m.feedback}</p></div>${!correct?btn('retry-clue','이유 다시 고르기'):''}`;
+  if(correct&&m.clue&&!already){pendingClue=m.id;dialog.querySelector('form button').textContent='사건 보드에 연결';}
+  dialog.scrollTop=0;dialog.querySelector('h2').focus();
 });
 document.querySelector('#notes').onclick=()=>modal(`<span class="eyebrow">PRIVATE CASE NOTES</span><h2 id="dialog-title" tabindex="-1">나의 사건 수첩</h2>${notebook()}<p class="muted">선택과 문장은 이 페이지에서만 유지됩니다.</p>`);
 document.querySelector('#guide').onclick=()=>modal('<h2 id="dialog-title" tabindex="-1">탐정단 활동 안내</h2><p>파일 조사 → 사건 보드 연결 → 댓글 바꾸기 → 해결 계획 → 최종 확인 순서로 진행해요. 약 12~15분 걸려요.</p><h3>회로와 함께 한 장면씩</h3><p>대사는 순서대로 나타나요. “바로 보기”는 현재 대사를 완성하고, “대사 건너뛰기”는 다음 조사로 넘어가요. 기기의 동작 감소 설정에서는 대사가 즉시 보여요.</p><h3>나만 보는 사건 수첩</h3><p>선택과 문장은 서버나 브라우저 저장소에 저장하지 않아요. 교사도 개인 결과나 완료 인원을 조회할 수 없어요. 종료·새로고침·페이지 이탈 시 지워져요.</p><h3>함께 이야기하기</h3><p>실제 친구의 이름이나 피해 경험, 개인 결과 공개를 요구하지 않고 가상 사건을 토의해요. 자동 글쓰기 평가나 점수·순위는 없어요.</p>');

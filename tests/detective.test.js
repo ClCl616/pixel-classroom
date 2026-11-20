@@ -1,7 +1,29 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {newCase,inspect,evidenceReady,writingReady,planReady,escapeHtml,messages,actions} from '../public/detective/data.js';
-import {createTypewriter,caseBoard} from '../public/detective/scenes.js';
+import {createTypewriter,caseBoard,dialoguePages,evidencePages} from '../public/detective/scenes.js';
+
+test('short dialogue pages preserve all words, punctuation and speakers',()=>{
+  const lines=['반 단톡방에서 메시지가 멈췄어. 무슨 일이 있었는지 함께 살펴볼까?',{speaker:'지안',text:'내 얘기를 다른 방에서도 하는 것 같아. 그만하라고 말하면 더 놀릴까 봐 무서워.'}];
+  const pages=dialoguePages(lines,22);
+  assert.ok(pages.length>lines.length);
+  assert.ok(pages.every(p=>p.text.length<=22));
+  assert.equal(pages.filter(p=>p.speaker==='회로 탐정').map(p=>p.text).join(' '),lines[0]);
+  assert.equal(pages.filter(p=>p.speaker==='지안').map(p=>p.text).join(' '),lines[1].text);
+  assert.deepEqual(dialoguePages([]),[]);
+});
+
+test('evidence pages keep every message and preserve the exclusion exchange in one scene',()=>{
+  for(const room of ['sns','chat']){
+    const pages=evidencePages(room);
+    assert.equal(pages.length,room==='sns'?2:3);
+    assert.deepEqual(pages.flat().map(m=>m.id),messages.filter(m=>m.room===room).map(m=>m.id));
+    assert.ok(pages.every(p=>p.length<=2));
+  }
+  assert.deepEqual(evidencePages('chat')[1].map(m=>m.id),['b3','b4']);
+  assert.deepEqual(evidencePages('chat')[2].map(m=>m.id),['b5']);
+  const a=newCase(),b=newCase();a.evidencePage.chat=1;assert.equal(b.evidencePage.chat,0);
+});
 
 test('evidence requires both files and four correctly classified clues, never supportive messages',()=>{
   const state=newCase();

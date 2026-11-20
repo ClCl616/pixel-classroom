@@ -1,5 +1,28 @@
 import {messages, escapeHtml as esc} from './data.js';
 
+// Preserve every word and speaker while keeping each speech screen short.
+export function dialoguePages(lines,limit=42){
+  return lines.flatMap(line=>{
+    const speaker=typeof line==='string'?'회로 탐정':line.speaker;
+    const text=typeof line==='string'?line:line.text;
+    return text.split(/(?<=[.!?])\s+/u).flatMap(sentence=>{
+      const pages=[];let page='';
+      for(const word of sentence.split(/\s+/u)){
+        if(page&&`${page} ${word}`.length>limit){pages.push({speaker,text:page});page='';}
+        page=page?`${page} ${word}`:word;
+      }
+      if(page)pages.push({speaker,text:page});
+      return pages;
+    });
+  });
+}
+
+export function evidencePages(room){
+  const items=messages.filter(m=>m.room===room);
+  // Keep exclusion and the agreeing reply together; the next page shows its impact.
+  return [items.slice(0,2),items.slice(2,4),items.slice(4)].filter(page=>page.length);
+}
+
 // One owned timer: leaving a scene or revealing a line cancels pending work.
 export function createTypewriter({schedule=setTimeout,cancel=clearTimeout}={}) {
   let timer=null, chars=[], position=0, write=()=>{}, done=()=>{}, generation=0;

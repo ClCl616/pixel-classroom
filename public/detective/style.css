@@ -11,3 +11,40 @@
 @media(max-height:450px){.topbar{height:48px}.case-progress{padding:6px 12px}.workspace{overflow:auto}.workspace>*{flex-shrink:0}.controls{padding:8px 12px 10px}.scene-story .story-illustration{display:none}.scene-board .case-board{flex:none;height:250px}.scene-evidence .phone-file{flex:none;height:280px}.scene-writing .writing-paper,.scene-report .report-paper,.scene-plan .action-card,.scene-quiz .quiz-paper,.scene-connection .response-list,.scene-plan-review .plan-review{flex:none;overflow:visible}.scene-intro .intro-art{height:120px;flex:none}.file-selection{flex:none}.scene-concept .concept-card{margin-top:0;margin-bottom:0}}
 @media(prefers-reduced-motion:no-preference){.new-thread{stroke-dasharray:1;stroke-dashoffset:1;animation:connect-thread .65s .2s ease-out forwards}.new-pin{animation:pin-clue .45s ease-out}.scene-story .story-illustration img{animation:scene-arrive .3s ease-out}.radio-light{animation:radio-pulse 1.5s steps(2,end) infinite}.page-heading{animation:scene-arrive .2s ease-out}@keyframes connect-thread{to{stroke-dashoffset:0}}@keyframes pin-clue{from{opacity:0;translate:0 -16px;scale:1.08}to{opacity:1;translate:0 0;scale:1}}@keyframes scene-arrive{from{opacity:.2;translate:0 6px}to{opacity:1;translate:0 0}}@keyframes radio-pulse{50%{opacity:.4}}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+
+/* Immersive play: one slim utility bar, no persistent stage rail. */
+.topbar{height:44px;min-height:44px;padding:0 24px;background:#244e41;color:#e7efdb;border:0}
+.exit-link{font-size:13px;text-decoration:none;min-height:44px;display:flex;align-items:center}
+.topbar>div{gap:4px}.topbar button{border:0;background:transparent;color:inherit;min-width:44px;min-height:44px;padding:6px 10px;font-size:13px}
+.topbar button:hover:not(:disabled){background:#416355}
+#app{padding:0}.game{border:0;box-shadow:none;max-width:1160px}.workspace{padding:20px 28px;gap:16px}.workspace>*{max-width:880px}
+.page-heading{position:relative;padding-right:52px}.page-heading h1{margin-top:0}.scene-count{position:absolute;right:0;top:4px;font:12px monospace;color:#52695a}
+.scene-board .page-heading,.scene-story .page-heading,.scene-evidence .page-heading{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;padding:0;margin:0}
+.controls{padding:12px 28px 16px}.case-board{max-height:none;min-height:280px}.board-pin>span{font-size:20px}.board-pin small{font-size:14px}
+.speech,.scene-board .speech{padding:20px;gap:20px;min-height:172px}.speaker-portrait,.scene-board .speaker-portrait{width:100px}.speech-copy>small{font-size:17px}.spoken-line,.scene-board .spoken-line{font-size:22px;line-height:1.7;min-height:3.4em}
+.story-illustration{max-height:none;min-height:120px}.scene-story .workspace{gap:18px}.scene-story .speech{min-height:198px}
+.phone-file>.scene-pager{padding:8px 12px;border-top:1px solid #bdc8b3;background:#e7ebdc;max-width:none;margin:0}
+.phone-file>.scene-pager button{min-height:44px;padding:6px 12px}.message-scroll{overflow:auto}.messages{gap:12px}.message{font-size:18px;padding:16px}.scene-evidence .phone-file{min-height:0}
+.plan-review .paper{flex:1;margin:0;min-height:0;overflow:auto}.plan-review .paper h2{margin-top:0}
+.scene-story .workspace>.sr-only{position:absolute;flex:none}
+.scene-evidence .messages{padding:6px;gap:8px}
+@media(max-width:680px){
+ .topbar{height:44px;min-height:44px;padding:0 12px}.topbar button{font-size:12px;min-height:44px;padding:6px 8px}.exit-link{font-size:12px}
+ .workspace,.scene-board .workspace{padding:12px;gap:12px}.page-heading h1{font-size:22px;margin:0}.scene-count{font-size:11px;top:6px}
+ .controls{padding:10px 12px 12px}.controls button{font-size:14px;min-height:46px}
+ .case-board{min-height:260px;max-height:none;border-width:5px}.board-pin{padding:9px;gap:6px}.board-pin>span{font-size:15px;line-height:1.6}.board-pin small{font-size:11px}
+ .speech,.scene-board .speech{min-height:152px;padding:14px;gap:12px}.speaker-portrait,.scene-board .speaker-portrait{width:56px}.speech-copy>small{font-size:15px}.spoken-line,.scene-board .spoken-line{font-size:18px;line-height:1.65;min-height:3.3em;margin-top:6px}
+ .scene-story .speech{min-height:184px}.scene-story .speaker-portrait{width:72px}.scene-story .story-illustration{max-height:none;min-height:100px}.scene-story .workspace{gap:14px}
+ .scene-story .spoken-line{min-height:4.95em}.board-center strong{font-size:12px}.board-center small{font-size:10px}
+ .file-head{padding:10px 12px}.file-head small{display:none}.file-head strong{font-size:15px}.message{font-size:16px;padding:12px;gap:10px}.message small{font-size:12px}.messages{padding:12px;gap:10px}
+ .post-caption p{font-size:14px}.post-caption{padding:10px 12px}.left-room{font-size:12px;margin:0 10px 10px}.scene-tip{font-size:12px}
+ .phone-file>.scene-pager{padding:6px 10px;gap:18px}.phone-file>.scene-pager button{min-height:44px;font-size:13px}
+ .scene-plan-review .plan-review{padding-right:4px}.scene-plan-review .paper{padding:18px}.plan-review .paper p{font-size:16px}
+ .reason-list button{font-size:15px}.reason-list{gap:12px}dialog{padding:20px}dialog .feedback p{font-size:17px;line-height:1.8}dialog h2{font-size:23px}dialog blockquote{font-size:16px}
+}
+@media(max-width:360px){.board-pin>span{font-size:14px}.board-pin small{font-size:10px}.scene-story .speaker-portrait{width:62px}.scene-board .speech{padding:12px}.scene-board .speaker-portrait{width:48px}.scene-board .spoken-line{font-size:17px}.scene-evidence .workspace{gap:10px}.message{padding:10px}.post-caption{padding:8px 10px}}
+@media(max-height:450px){
+ .topbar{height:44px}.workspace{overflow:auto}.scene-board .case-board{min-height:260px;height:260px;flex:none}
+ .scene-story .story-illustration{display:none}.scene-story .speech{min-height:160px}.scene-evidence .phone-file{min-height:330px;height:auto;flex:none}
+ .scene-evidence .message-scroll{overflow:visible}.scene-evidence .phone-file>.scene-pager{flex:none}.controls{padding:8px 12px 10px}
+}
